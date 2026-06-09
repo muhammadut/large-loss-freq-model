@@ -1,0 +1,16 @@
+# This is a scratch working directory. Only the README, the src/ package, and the
+# outputs explainer are part of the project — everything else is ignored.
+/*
+!/.gitignore
+!/README.md
+!/src/
+!/outputs/
+
+# outputs/ holds generated run folders; track only the explainer
+/outputs/*
+!/outputs/README.md
+
+# python noise
+__pycache__/
+*.pyc
+.DS_Store

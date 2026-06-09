@@ -1,0 +1,59 @@
+# =============================================================================
+# Large-Loss Frequency Model — calibration config (single source of truth)
+# Every business choice lives here. Code reads this; nothing is hard-coded.
+# See config.reference.md for the meaning + valid range of each field.
+# =============================================================================
+
+run:
+  name: "annual_recalibration_2025"   # appears in the run report
+  output_dir: "outputs"               # generated artifacts live OUTSIDE src/
+
+data:
+  path: "data/basic_data_1.csv"
+  loss_col: "TOTAL_COVERAGE_INCURREDLOSS_M"
+  year_col: "ROLLING_YEAR"
+  cat_flag_col: "CATASTROPHENUMBER"   # used to action the cat_scope decision below
+  policy_period_col: "POLICYPERIOD_ID_M"   # optional; enables the count-grain diagnostic
+
+large_loss:
+  threshold: 200000                   # risk-tolerance definition (fixed $)
+  mode: "fixed"                       # only "fixed" is implemented (percentile rejected at load)
+  cat_scope: "assume_excluded"        # assume_excluded | exclude_flagged | include_all
+  # ^ business decision: this book is treated as already non-catastrophe. The cat
+  #   flag in this extract is empty, so we cannot filter; we DISCLOSE the assumption.
+
+exposure:
+  lens: "premium"                     # premium (default) | tiv | earned_exposure
+  # ^ changing the lens changes the offset, the rate's MEANING, and what you must project forward
+  columns:
+    premium: "TOTAL_EARNED_PREMIUM"
+    tiv: "TIV"
+    earned_exposure: "TOTAL_EARNED_EXPOSURE"
+
+segmentation:
+  keys: ["CovType", "ratingregion", "MAIN_OPGROUP"]
+  industry_key: "MAIN_OPGROUP"        # the credibility complement anchor (same-industry shrinkage)
+  null_region_key: "ratingregion"     # blanks here are bucketed, never dropped
+  null_region_fill: "Unknown"
+  drop_null_industry: true
+
+calibration:
+  experience_years: [2021, 2022, 2023, 2024, 2025]
+  reference_year: 2024                # MUST be the last fully-DEVELOPED year (2025 still maturing)
+  family: "poisson"                   # only "poisson" is implemented (NB rejected at load)
+  year_effect: true                   # the on-leveling term — do not disable
+
+credibility:
+  method: "buhlmann_hierarchical"
+  level1_keys: ["CovType", "MAIN_OPGROUP"]   # MUST include industry_key; cell -> (cov x industry) -> industry -> portfolio
+  full_credibility_losses: 5                 # informational threshold for the thin-segment gate
+
+validation:                           # each gate: a threshold + what happens if it trips
+  reconciliation:      {tol_pct: 1.0,  on_fail: "halt"}            # implementation invariant; totals MUST match
+  dispersion:          {max_ratio: 1.5, on_fail: "warn"}           # warn -> consider NB / missing driver
+  thin_segment_share:  {max_thin_pct: 90, on_fail: "warn"}         # informational: how many segments are thin
+  backtest:            {holdout_year: 2024, on_fail: "warn"}       # aggregate: predict a held-out mature year
+  backtest_segment:    {min_spearman: 0.45, on_fail: "warn"}       # segment-level holdout calibration
+  robustness_drop_yr:  {max_p95_move_pct: 40, on_fail: "warn"}     # drop newest year: FINAL-rate p95 move
+  base_agreement:      {alt_lens: "tiv", min_corr: 0.80, on_fail: "warn"}   # premium vs TIV (informational)
+  total_preservation:  {max_drift_pct: 2.0, on_fail: "warn"}       # credibility drift within tolerance

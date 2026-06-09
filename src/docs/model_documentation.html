@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Large-Loss Frequency Model — Methodology & Documentation</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root{
+    --ink:#1a1a2e; --muted:#5b6478; --line:#e2e6ef; --bg:#f5f7fb; --card:#ffffff;
+    --brand:#2563eb; --brand-d:#1d4ed8;
+    --green:#0f9d58; --green-bg:#e9f7ef; --green-ln:#0f9d58;
+    --amber:#b9770e; --amber-bg:#fdf6e7; --amber-ln:#e0a92e;
+    --red:#c0392b;  --red-bg:#fdeeec;  --red-ln:#e07a6f;
+    --blue:#1f6feb; --blue-bg:#eaf1ff; --blue-ln:#2563eb;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  html{scroll-behavior:smooth;}
+  body{font-family:"Segoe UI",system-ui,Arial,sans-serif;font-size:16px;line-height:1.65;
+        color:var(--ink);background:var(--bg);margin:0;padding:0;}
+  header.top{background:linear-gradient(135deg,#1a1a2e,#23314f);color:#fff;padding:42px 7vw 34px;}
+  header.top h1{margin:0 0 8px;font-size:2rem;letter-spacing:.3px;}
+  header.top .sub{opacity:.8;font-size:1.02rem;max-width:760px;}
+  .status{display:inline-block;margin-top:18px;background:#ffffff1a;border:1px solid #ffffff33;
+          padding:8px 14px;border-radius:999px;font-size:.85rem;}
+  .status b{color:#9ecbff;}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px;}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;
+          margin:28px auto;padding:20px 26px;box-shadow:0 1px 3px #0000000d;}
+  nav.toc h3{margin:0 0 10px;font-size:.78rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+  nav.toc ol{margin:0;padding-left:22px;columns:2;column-gap:36px;}
+  nav.toc li{margin:5px 0;}
+  nav.toc a{color:var(--brand);text-decoration:none;}
+  nav.toc a:hover{text-decoration:underline;}
+  section.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+               margin:0 auto 26px;padding:30px 34px;box-shadow:0 1px 3px #0000000d;}
+  h2{font-size:1.5rem;margin:.2em 0 .6em;padding-bottom:.35em;border-bottom:2px solid var(--brand);}
+  h3{font-size:1.16rem;margin:1.4em 0 .4em;color:#23314f;}
+  h4{font-size:1.02rem;margin:1.1em 0 .3em;color:#33405c;}
+  p{margin:.55em 0;}
+  .lead{font-size:1.08rem;color:#2a3145;}
+  ul,ol{margin:.4em 0 .8em;}
+  li{margin:.25em 0;}
+  code{font-family:var(--mono);background:#eef1f7;padding:1px 6px;border-radius:5px;font-size:.9em;}
+  .box{border-radius:10px;padding:14px 18px;margin:16px 0;border-left:5px solid;}
+  .box .tag{font-weight:700;font-size:.74rem;letter-spacing:.6px;text-transform:uppercase;display:block;margin-bottom:5px;}
+  .plain{background:var(--blue-bg);border-color:var(--blue-ln);} .plain .tag{color:var(--brand-d);}
+  .ex{background:var(--green-bg);border-color:var(--green-ln);} .ex .tag{color:var(--green);}
+  .why{background:var(--amber-bg);border-color:var(--amber-ln);} .why .tag{color:var(--amber);}
+  .warn{background:var(--red-bg);border-color:var(--red-ln);} .warn .tag{color:var(--red);}
+  .formula{font-family:var(--mono);background:#1a1a2e;color:#e8edf6;border-radius:10px;
+           padding:16px 20px;margin:16px 0;overflow-x:auto;font-size:.92rem;line-height:1.7;}
+  .formula .c{color:#7fd1ae;}
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.92rem;}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top;}
+  thead th{background:#1a1a2e;color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:#f7f9fc;}
+  .pass{color:var(--green);font-weight:700;} .flag{color:var(--red);font-weight:700;}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.76rem;font-weight:600;}
+  .pill.ok{background:var(--green-bg);color:var(--green);}
+  .pill.no{background:var(--red-bg);color:var(--red);}
+  .pill.soon{background:#eee9fb;color:#6b46c1;}
+  .kpi{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0;}
+  .kpi .k{flex:1 1 140px;background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .kpi .k .n{font-size:1.6rem;font-weight:700;color:var(--brand-d);}
+  .kpi .k .l{font-size:.82rem;color:var(--muted);}
+  .step{display:flex;gap:14px;align-items:flex-start;margin:14px 0;}
+  .step .num{flex:0 0 34px;height:34px;border-radius:50%;background:var(--brand);color:#fff;
+             display:flex;align-items:center;justify-content:center;font-weight:700;}
+  footer{color:var(--muted);text-align:center;padding:40px 20px;font-size:.85rem;}
+  .anchor{display:block;position:relative;top:-12px;visibility:hidden;}
+  hr.soft{border:none;border-top:1px dashed var(--line);margin:26px 0;}
+  .small{font-size:.86rem;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap" style="padding:0;">
+    <h1>Large-Loss Frequency Model</h1>
+    <div class="sub">Methodology &amp; documentation, written for readers with <strong>no statistical background</strong>.
+      How the model works, how we proved it works, what it produces — and why the earlier exploratory models didn't.</div>
+    <div class="status">📘 <b>Living document</b> &nbsp;·&nbsp; Part 1 (Model + Validation): complete &nbsp;·&nbsp; Part 2 (Credibility): complete &nbsp;·&nbsp; Appendix: earlier models</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#problem">1. The problem in plain English</a></li>
+    <li><a href="#goal">2. What we are estimating</a></li>
+    <li><a href="#data">3. The data</a></li>
+    <li><a href="#concepts">4. Five ideas you need first</a></li>
+    <li><a href="#model">5. The model, step by step</a></li>
+    <li><a href="#validation">6. How we proved it works</a></li>
+    <li><a href="#outputs">7. What the model produces</a></li>
+    <li><a href="#status">8. Status &amp; honest limitations</a></li>
+    <li><a href="#credibility">9. Part 2 — Credibility</a></li>
+    <li><a href="#appendix">Appendix — Earlier models &amp; why they failed</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================= 1 -->
+<span class="anchor" id="problem"></span>
+<section class="card">
+  <h2>1. The problem in plain English</h2>
+  <p class="lead">When a big insurance loss happens, the business today cannot say whether it was <em>expected</em> or not — so every large loss looks like bad news, even when it is perfectly normal.</p>
+
+  <p>Imagine you flip 100 coins and get 58 heads. Is that alarming? No — it is well within normal luck. But if you had <em>no idea</em> what "normal" looked like, every result above 50 would feel like something went wrong. That is exactly the situation with large losses: we report what happened, but we have no <strong>yardstick</strong> for what <em>should</em> have happened.</p>
+
+  <div class="box why"><span class="tag">Why it matters</span>
+    Without an "expected" number and a sense of the normal range, three things go wrong (straight from the project brief): large losses are always read as adverse; we can't separate ordinary bad luck from a real structural problem; and pricing decisions lean on hindsight instead of a real expectation.</div>
+
+  <p>This project builds that yardstick. It is deliberately <strong>frequency-first</strong>: it answers <em>"how many large losses should we expect?"</em>, not <em>"how big will they be?"</em> (severity is a later phase).</p>
+</section>
+
+<!-- ============================================================= 2 -->
+<span class="anchor" id="goal"></span>
+<section class="card">
+  <h2>2. What we are estimating</h2>
+  <p>The entire model exists to produce <strong>one sentence</strong>, every reporting period:</p>
+  <div class="box plain"><span class="tag">The output, in one sentence</span>
+    “In a fair test — training only on 2021–2023 and predicting 2024, a year it had never seen — the model <strong>expected about 184</strong> large losses; we actually had <strong>181</strong>. That is roughly the <strong>40th percentile</strong> — completely normal. A real period's gap would then be split into <strong>growth vs. mix vs. rate vs. luck</strong>.”</div>
+
+  <p>To say that sentence you need three ingredients, and they are the three things the model computes:</p>
+  <table>
+    <thead><tr><th>Ingredient</th><th>Plain meaning</th><th>Where it comes from</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Expected count</strong></td><td>How many large losses we should see, given the size and shape of the book</td><td>frequency rate × exposure, summed over all segments</td></tr>
+      <tr><td><strong>A normal range</strong></td><td>The band of outcomes that count as "ordinary luck" (e.g. 162–207)</td><td>the Poisson distribution around the expected count</td></tr>
+      <tr><td><strong>The "why"</strong></td><td>Split the gap into growth vs. mix vs. rate vs. luck</td><td>the attribution waterfall (a later step)</td></tr>
+    </tbody>
+  </table>
+  <p>This document covers how we build the <strong>expected count</strong> and its <strong>range</strong> — the engine that everything else sits on.</p>
+</section>
+
+<!-- ============================================================= 3 -->
+<span class="anchor" id="data"></span>
+<section class="card">
+  <h2>3. The data</h2>
+  <p>One file, <code>basic_data_1.csv</code>. Think of it as a giant spreadsheet where each row is one slice of coverage on one policy for one year.</p>
+  <div class="kpi">
+    <div class="k"><div class="n">2.88M</div><div class="l">rows</div></div>
+    <div class="k"><div class="n">205K</div><div class="l">unique policies</div></div>
+    <div class="k"><div class="n">2021–2025</div><div class="l">years of history</div></div>
+    <div class="k"><div class="n">~14,500</div><div class="l">rows with any loss</div></div>
+  </div>
+  <p>The columns the model actually uses — only six really matter:</p>
+  <table>
+    <thead><tr><th>Column</th><th>What it is, in plain terms</th><th>Role in the model</th></tr></thead>
+    <tbody>
+      <tr><td><code>TOTAL_COVERAGE_INCURREDLOSS_M</code></td><td>The dollar cost of losses on that coverage (the "_M" means the IDs are masked/anonymised — values are real dollars, up to ~$40M)</td><td>Defines what counts as a "large loss"</td></tr>
+      <tr><td><code>ROLLING_YEAR</code></td><td>The calendar year (2021–2025)</td><td>The <strong>year effect</strong> (explained below)</td></tr>
+      <tr><td><code>TOTAL_EARNED_PREMIUM</code></td><td>The premium we earned — i.e. the price the customer paid us for cover</td><td>The <strong>exposure</strong> ("per what")</td></tr>
+      <tr><td><code>CovType</code></td><td>Coverage type — two kinds (<code>COVCP</code>, <code>COVCL</code>)</td><td>A segment label</td></tr>
+      <tr><td><code>ratingregion</code></td><td>Geographic rating region (6 regions; some blank → "Unknown")</td><td>A segment label</td></tr>
+      <tr><td><code>MAIN_OPGROUP</code></td><td>The customer's industry / line of business (23 groups: Realty, Contractors, Restaurant…)</td><td>A segment label — our <strong>strongest</strong> one</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Also available and useful as alternatives: <code>TIV</code> (Total Insured Value — the value of what's insured) and <code>TOTAL_EARNED_EXPOSURE</code>, both candidate "exposure" measures discussed in §4 and §5.</p>
+</section>
+
+<!-- ============================================================= 4 -->
+<span class="anchor" id="concepts"></span>
+<section class="card">
+  <h2>4. Five ideas you need first</h2>
+  <p>Everything downstream is built from these five plain-English ideas. No maths background required.</p>
+
+  <h3>① Frequency, not severity</h3>
+  <p>Two things can go wrong with losses: they can happen <em>too often</em> (frequency) or each one can be <em>too big</em> (severity). We only model <strong>frequency</strong> here — the <em>count</em> of large losses. "How many," not "how much."</p>
+
+  <h3>② What makes a loss "large" — the threshold</h3>
+  <p>A "large loss" is simply any loss above a dollar line in the sand. We set that line at <strong>$200,000</strong>.</p>
+  <div class="box why"><span class="tag">Why $200,000?</span>
+    Because that is the number the business already uses — the risk-tolerance model defines a large loss as $200,000. Aligning to the existing definition is a core principle ("use consistent definitions across Pricing, Risk Appetite and Reporting"). We deliberately did <strong>not</strong> let the data pick the line, because a data-derived line drifts every refresh (see Appendix).</div>
+  <div class="box ex"><span class="tag">Concrete example</span>
+    At $200K, the book has <strong>783</strong> large losses over five years (~157/year). If the business prefers a "tail-only" view, the same machine runs at $500K (286 losses, ~57/year) or $1M (132 losses, ~26/year). The threshold is a business dial; the model doesn't care which you pick.</div>
+
+  <h3>③ You can't compare raw counts — you need a denominator</h3>
+  <p>"160 large losses" means nothing on its own. 160 out of <em>how much business?</em> A book twice the size will have twice the losses with no change in underlying risk. So we never look at counts alone — we look at a <strong>rate</strong>:</p>
+  <div class="formula">frequency rate = large-loss count ÷ <span class="c">exposure</span></div>
+  <div class="box plain"><span class="tag">In plain English</span>
+    <strong>Exposure is just the answer to "per what?"</strong> It is the size of the book — the denominator that makes two years, or two segments, comparable. Think of comparing two stores by "number of complaints." Useless until you know one serves 10 customers and the other 10,000. You want complaints <em>per customer</em>. Exposure is the customer count.</div>
+
+  <h3>④ Which "per what"? We use earned premium</h3>
+  <p>There are three candidate denominators in the data: <strong>premium</strong> (the price charged), <strong>TIV</strong> (the value insured), and <strong>earned exposure</strong> (a volume count). We chose <strong>earned premium</strong> as the primary base because it is present on ~99% of rows and it is the currency pricing speaks in. We keep <strong>TIV as a cross-check</strong> (a stakeholder suggested trying it — and it's a useful second opinion; see §6, Gate 6).</p>
+
+  <h3>⑤ A "rate" still has a trap in it — time</h3>
+  <p>Here is the subtle one, and it is the heart of the whole model. The price we charge (premium) is made of two things multiplied together:</p>
+  <div class="formula">Premium = <span class="c">exposure</span> (how much risk) × <span class="c">rate level</span> (what we charge per unit of risk)</div>
+  <p>If we push a price increase, premium goes up <em>even though the actual risk and the number of large losses didn't change</em>. So "losses ÷ premium" quietly <em>falls</em> — and someone reads it as "our risk is improving!" It isn't. Our pricing changed; the world didn't. This is the <strong>"fake improving frequency"</strong> trap.</p>
+  <div class="box ex"><span class="tag">We can see the trap in our own data</span>
+    From 2021 to 2025, earned premium grew <strong>+58%</strong> while large-loss counts stayed roughly flat. So "losses per premium" drifts <em>down</em> ~36% over the period — which looks like improvement but is mostly just the book getting bigger. The fix for this is idea ⑤'s solution: the <strong>year effect</strong>, in §5.</div>
+</section>
+
+<!-- ============================================================= 5 -->
+<span class="anchor" id="model"></span>
+<section class="card">
+  <h2>5. The model, step by step</h2>
+  <p>The model is one clean pipeline. Here is the whole thing, then each piece in plain terms.</p>
+
+  <div class="step"><div class="num">1</div><div><strong>Flag the large losses.</strong> Mark every loss ≥ $200,000.</div></div>
+  <div class="step"><div class="num">2</div><div><strong>Build a tidy summary table.</strong> One row per <em>segment × year</em>, with two numbers: how many large losses, and how much premium (the exposure).</div></div>
+  <div class="step"><div class="num">3</div><div><strong>Fit the GLM.</strong> A single model that learns a clean frequency rate for every segment at once — and uses a <em>year effect</em> to strip out the time trap from idea ⑤.</div></div>
+  <div class="step"><div class="num">4</div><div><strong>Read out the rates.</strong> Ask the model for each segment's rate, expressed at one consistent year (2024).</div></div>
+
+  <h3>What is a "segment"?</h3>
+  <p>A segment is a meaningful slice of the book — a combination of <strong>coverage type × region × industry</strong>. For example <em>"Property coverage, Quebec, Realty"</em> is one segment. We have ~300 of them. The model gives each a rate.</p>
+
+  <h3>What is a GLM, really? (no maths)</h3>
+  <p>A <strong>GLM</strong> (Generalized Linear Model) sounds intimidating; here it is just <em>a disciplined calculator that figures out the frequency rate for every segment at the same time, while letting segments share information</em>. It writes the expected count as a recipe:</p>
+  <div class="formula">
+expected count = <span class="c">exposure</span> × baseline rate × (coverage multiplier) × (region multiplier) × (industry multiplier) × (year multiplier)
+  </div>
+  <p>Each "multiplier" is what statisticians call a <strong>coefficient</strong> or <strong>relativity</strong>. It just says how a segment differs from the baseline.</p>
+  <div class="box ex"><span class="tag">Concrete example of relativities</span>
+    Suppose the baseline rate is "X large losses per million dollars." The model might learn: Property coverage = <strong>2.5×</strong> baseline; Quebec = <strong>1.3×</strong>; Realty industry = <strong>0.8×</strong>. Then <em>Property, Quebec, Realty</em> = 2.5 × 1.3 × 0.8 = <strong>2.6× baseline</strong>. You read risk by multiplying the dials. (These numbers are illustrative.)</div>
+  <div class="box plain"><span class="tag">Why "log" shows up in the maths</span>
+    Rates <em>multiply</em> (a risky region <em>and</em> a risky industry compound). Computers find multiplication harder to fit than addition, so the model works in "log" units, where multiplying becomes adding. That's the only reason you see <code>log</code> in the formulas — it's a convenience, not a concept you need to track.</div>
+
+  <h3>The "offset" — locking in the denominator</h3>
+  <p>We force the <em>exposure</em> term into the recipe with its dial glued to 1. That single trick is what turns a model of <em>counts</em> into a model of <em>rates per unit of exposure</em>. (In the code it appears as <code>offset = log(premium)</code>.) the earlier code got this part right.</p>
+
+  <h3>The year effect — the most important idea in the whole model</h3>
+  <p>We give the model one dial <em>per year</em>. Each year-dial is free to absorb "whatever was special about that year as a whole" — a price increase, general inflation, a soft market. Because the year-dials soak up those year-wide shifts, the <strong>segment</strong> dials come out <em>clean</em>: expressed at one consistent price level instead of a blur across five different ones.</p>
+  <div class="box plain"><span class="tag">In plain English</span>
+    The year effect is <strong>inflation-adjustment for risk rates</strong>. Comparing a $300K house in 2015 to a $300K house in 2025 is unfair without adjusting for inflation. Same here: comparing "losses per premium" across years is unfair while our prices are changing. The year effect does that adjustment automatically — learned from the data, with no rate-change table needed.</div>
+  <div class="box why"><span class="tag">Why it matters / what the earlier model missed</span>
+    This is the single thing the earlier 12 models were missing. They put the year into the grouping but <em>not</em> into the model — so the time trap from idea ⑤ went uncorrected. Adding one term, <code>C(ROLLING_YEAR)</code>, is the difference between a biased rate and a clean one. (Full autopsy in the Appendix.)</div>
+
+  <h3>The actual model</h3>
+  <div class="formula">
+large_loss_count ~ <span class="c">C(CovType)</span> + <span class="c">C(ratingregion)</span> + <span class="c">C(MAIN_OPGROUP)</span> + <span class="c">C(ROLLING_YEAR)</span>
+&nbsp;&nbsp;family = Poisson&nbsp;&nbsp;|&nbsp;&nbsp;offset = log(earned_premium)&nbsp;&nbsp;|&nbsp;&nbsp;read rates at year = 2024
+  </div>
+  <p><em>Poisson</em> is simply the standard "maths of counting rare events." It is the natural choice for "how many large losses," and §6 shows it fits this data well.</p>
+
+  <div class="box why"><span class="tag">Why we read the rate at 2024, not 2025</span>
+    The most recent year (2025) shows fewer large losses than 2024 at <em>every</em> threshold — the tell-tale sign that 2025's claims haven't fully "matured" yet (some large losses are still being reported and developed). So we anchor the clean rate to <strong>2024</strong>, the last fully-developed year. The model still <em>learns</em> from 2025; we just don't set the price level by an incomplete year.</div>
+</section>
+
+<!-- ============================================================= 6 -->
+<span class="anchor" id="validation"></span>
+<section class="card">
+  <h2>6. How we proved it works</h2>
+  <p>A model you can't check is a model you can't trust. Before publishing any number, the pipeline runs <strong>six gates</strong>. Each is a pass/fail test in plain English. Here are the real results.</p>
+
+  <table>
+    <thead><tr><th>Gate</th><th>The question, in plain English</th><th>Result</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. Reconciliation</strong></td><td>Does the model's total match reality? (If we add up what it predicts, do we get the real number of losses?)</td><td>predicted <strong>783.0</strong> vs actual <strong>783</strong></td><td><span class="pill ok">PASS</span></td></tr>
+      <tr><td><strong>2. Spread check</strong></td><td>Is plain Poisson good enough, or is the data more erratic than it assumes?</td><td>spread ratio <strong>1.15</strong> (1.0 = perfect)</td><td><span class="pill ok">PASS</span></td></tr>
+      <tr><td><strong>3. Credibility</strong></td><td>Do enough segments have enough data to trust their individual rate?</td><td><strong>86%</strong> of segments have &lt;5 losses</td><td><span class="pill no">NEEDS STEP 6</span></td></tr>
+      <tr><td><strong>4. Backtest</strong></td><td>Train on the past, predict a year it never saw — does it get it right?</td><td>predicted <strong>184</strong> vs actual <strong>181</strong> (range 162–207)</td><td><span class="pill ok">PASS</span></td></tr>
+      <tr><td><strong>5. Robustness</strong></td><td>If we drop the incomplete 2025, do the rates barely move?</td><td>correlation <strong>0.993</strong></td><td><span class="pill ok">PASS</span></td></tr>
+      <tr><td><strong>6. Base agreement</strong></td><td>Do premium-based and TIV-based rates tell the same story?</td><td><strong>0.61 → 0.63</strong> after Step 6 (still differ)</td><td><span class="pill soon">STRUCTURAL → see §9</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>What the gates are really telling us</h3>
+  <div class="box ex"><span class="tag">Gate 1 + 4 — the good news</span>
+    <strong>Gate 4 is the headline.</strong> We trained the model only on 2021–2023, then asked it to predict 2024 — a year it had never seen. It said <strong>184</strong>; the truth was <strong>181</strong>, smack in the middle of the normal range. Combined with Gate 1 (the totals reconcile exactly), this means: <strong>at the whole-portfolio level, we have an accurate, honestly-tested expected number.</strong> That is the core deliverable, and it works.</div>
+
+  <div class="box plain"><span class="tag">Gate 2 — "spread", explained</span>
+    Poisson makes a promise: for counting events, the <em>spread</em> of outcomes should roughly equal the <em>average</em>. If the real data is much more erratic than that promise, the model is too confident. We measure this with one number (the "dispersion ratio"); <strong>1.0 is a perfect match</strong>. Ours is <strong>1.15</strong> — nearly perfect — so plain Poisson is the right, simple choice. (the earlier models suggested we needed a fancier distribution; we didn't — see the Appendix.)</div>
+
+  <div class="box warn"><span class="tag">Gate 3 — the one thing that isn't ready yet</span>
+    The whole-portfolio number is solid, but the <em>individual segment rates</em> are not yet trustworthy. <strong>86% of segments have fewer than 5 historical large losses</strong> — too little data to believe their rate. The model's current "highest-risk" segments are all <em>Fishing</em> segments with <strong>zero</strong> historical large losses — clearly nonsense driven by one stray loss. The fix is <strong>credibility</strong> (Part 2), which shrinks thin segments toward their industry average. Until then: trust the portfolio total, not the raw per-segment rates.</div>
+
+  <div class="box plain"><span class="tag">Gate 6 — premium vs TIV</span>
+    Premium-based and TIV-based rates only agree moderately (0.61). Reason: the premium-to-TIV ratio is steady over <em>time</em> but varies a lot <em>across industries</em> (a Realty firm carries huge insured value per premium dollar; a service firm carries little). So the choice of denominator genuinely shifts which segments look risky. We first suspected this 0.61 was just thin-segment noise — but credibility (§9) barely moved it (→ 0.63), so the disagreement is <strong>structural, not noise</strong>. Premium and TIV are two genuinely different lenses; the full story and the decision are in §9.</div>
+</section>
+
+<!-- ============================================================= 7 -->
+<span class="anchor" id="outputs"></span>
+<section class="card">
+  <h2>7. What the model produces</h2>
+  <p>Two artifacts, both designed to be re-run every quarter.</p>
+  <h3>① The rate table (<code>rate_table.csv</code>)</h3>
+  <p>One clean frequency rate for each of the ~300 segments, at the 2024 price level. This is the reusable "engine part" — calibrated once a year, then applied to current business.</p>
+  <table>
+    <thead><tr><th>CovType</th><th>ratingregion</th><th>MAIN_OPGROUP</th><th>rate (per $1M)</th><th>history</th></tr></thead>
+    <tbody>
+      <tr><td>COVCP</td><td>QC</td><td>Realty</td><td>(clean rate)</td><td>well-supported</td></tr>
+      <tr><td>COVCL</td><td>ON-region</td><td>Contractors</td><td>(clean rate)</td><td>well-supported</td></tr>
+      <tr><td>COVCP</td><td>NEWOR</td><td>Fishing</td><td>⚠ noisy</td><td>0 losses → needs Step 6</td></tr>
+    </tbody>
+  </table>
+  <h3>② The expected-vs-actual answer</h3>
+  <p>Multiply each segment's rate by its projected premium, add them up → the <strong>expected count</strong>. Put the Poisson "normal range" around it → the <strong>percentile</strong> and a <strong>traffic light</strong>:</p>
+  <table>
+    <thead><tr><th>Where actual lands</th><th>Light</th><th>Plain meaning</th></tr></thead>
+    <tbody>
+      <tr><td>25th–75th percentile</td><td><span class="pill ok">GREEN</span></td><td>Normal. "Consistent with expectations."</td></tr>
+      <tr><td>10th–25th or 75th–90th</td><td><span class="pill soon" style="background:#fdf6e7;color:#b9770e">AMBER</span></td><td>Somewhat unusual, still plausible.</td></tr>
+      <tr><td>below 10th / above 90th</td><td><span class="pill no">RED</span></td><td>Notable — worth investigating.</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Later steps add the <em>attribution waterfall</em> (splitting the gap into growth / mix / rate / luck) and the auto-written board narrative. Those sit on top of this same engine.</p>
+</section>
+
+<!-- ============================================================= 8 -->
+<span class="anchor" id="status"></span>
+<section class="card">
+  <h2>8. Status &amp; honest limitations</h2>
+  <table>
+    <thead><tr><th>Piece</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Whole-portfolio expected count + normal range</td><td><span class="pill ok">working &amp; backtested</span></td></tr>
+      <tr><td>Threshold ($200K, risk-aligned) &amp; year-effect on-levelling</td><td><span class="pill ok">locked &amp; validated</span></td></tr>
+      <tr><td>Poisson is sufficient (no fancier model needed)</td><td><span class="pill ok">confirmed</span></td></tr>
+      <tr><td>Individual segment rates</td><td><span class="pill ok">credibility applied (Part 2)</span></td></tr>
+      <tr><td>Premium vs TIV final verdict</td><td><span class="pill ok">resolved: premium primary, TIV = divergent cross-check</span></td></tr>
+    </tbody>
+  </table>
+  <p>Known simplifications we are documenting openly (all standard for a "Version 1"):</p>
+  <ul>
+    <li><strong>Most recent year (2025) is still developing</strong> — we calibrate at 2024 and flag this.</li>
+    <li><strong>Catastrophe losses are not separated out</strong> — the cat-flag column is 100% empty in this extract, so it cannot be done here; needs to be raised with the data source.</li>
+    <li><strong>Segment rates await credibility</strong> — the portfolio number is safe to use today; the segment table is not, until Part 2.</li>
+  </ul>
+</section>
+
+<!-- ============================================================= 9 -->
+<span class="anchor" id="credibility"></span>
+<section class="card">
+  <h2>9. Part 2 — Credibility <span class="pill ok">complete</span></h2>
+  <p class="lead">Part 1 gave a trustworthy <em>portfolio</em> number but noisy <em>segment</em> rates. Credibility is the fix — and it works exactly as intended.</p>
+
+  <div class="box plain"><span class="tag">What credibility does, in plain English</span>
+    A raw GLM gives every segment a rate with equal confidence — it cannot tell "0.05%, backed by 84 losses" from "high%, backed by 1 loss." <strong>Credibility</strong> shrinks each segment's rate toward its <em>industry average</em>, in proportion to how much real data backs it up. Lots of history → keep your own rate. Thin → get pulled to the group. The portfolio total barely moves — credibility just <em>redistributes</em> it believably.</div>
+
+  <h3>The credibility weight, Z</h3>
+  <p>Every segment gets a number <strong>Z between 0 and 1</strong> — "how much do we trust this segment's own data?" Z = 0.9 means "trust its own rate 90%, the industry average 10%." Z ≈ 0 means "ignore its own data, use the industry average." Z grows with how much premium (and history) a segment has — so big, well-observed segments keep their voice, and tiny ones borrow their industry's.</p>
+
+  <h3>The Fishing test — passed</h3>
+  <p>Recall the embarrassing raw result: the model's #1 "highest-risk" segment was Fishing with <strong>zero</strong> losses. Watch it collapse:</p>
+  <table>
+    <thead><tr><th>Segment</th><th>hist. losses</th><th>raw GLM /$1M</th><th>industry complement</th><th>Z (trust)</th><th>final /$1M</th></tr></thead>
+    <tbody>
+      <tr><td>Fishing · Property · NEWOR</td><td>0</td><td class="flag">5.645</td><td>0.393</td><td>0.0002</td><td class="pass">0.394</td></tr>
+      <tr><td>Fishing · Property · BCMS</td><td>1</td><td class="flag">4.661</td><td>0.393</td><td>0.0082</td><td class="pass">0.428</td></tr>
+      <tr><td>Fishing · Liability · ABandT</td><td>0</td><td class="flag">2.345</td><td>0.386</td><td>0.0000</td><td class="pass">0.386</td></tr>
+    </tbody>
+  </table>
+  <div class="box ex"><span class="tag">What happened</span>
+    Fishing × Property × NEWOR had <strong>0</strong> historical losses, so its trust weight is essentially zero (Z = 0.0002). The model therefore <em>ignores</em> its noisy raw rate (5.6) and uses the Fishing-industry average (0.39) instead — a <strong>14× correction</strong>. After credibility, the book's true highest-frequency segment is <strong>Recreation × Property × NEWOR</strong> at 0.57 per $1M — backed by <strong>6 real losses</strong>. Sensible, defensible, board-safe.</div>
+
+  <h3>How much shrinking happened</h3>
+  <div class="kpi">
+    <div class="k"><div class="n">0.13</div><div class="l">median trust weight Z</div></div>
+    <div class="k"><div class="n">73%</div><div class="l">of segments pulled hard to industry (Z &lt; 0.3)</div></div>
+    <div class="k"><div class="n">11 / 299</div><div class="l">segments stand mostly on own data (Z ≥ 0.7)</div></div>
+  </div>
+  <div class="box plain"><span class="tag">In plain English</span>
+    Most segments (73%) are thin and get pulled strongly toward their industry average — which is <em>correct</em>: with so few losses, the group is a better guide than a segment's own handful of events. Only 11 of 299 segments have enough data to stand mostly on their own. This is precisely why a raw GLM is unsafe at the segment level, and why this step is mandatory — not optional.</div>
+
+  <h3>Did the portfolio total survive? Yes.</h3>
+  <div class="kpi">
+    <div class="k"><div class="n">181.00</div><div class="l">expected, before credibility</div></div>
+    <div class="k"><div class="n">181.78</div><div class="l">expected, after credibility</div></div>
+    <div class="k"><div class="n">+0.43%</div><div class="l">drift (and still = actual 181)</div></div>
+  </div>
+  <div class="box why"><span class="tag">Why this matters</span>
+    Credibility <em>redistributes</em> risk across segments and should move the total only within a small tolerance — it is a checked property, not exact preservation by construction. It moved the portfolio expected from 181.00 to 181.78 — a <strong>0.43%</strong> drift, essentially unchanged, and still matching the actual 181. So the portfolio number from Part 1 holds, and now the segment rates underneath it are trustworthy too.</div>
+
+  <h3>The premium-vs-TIV verdict (Gate 6, re-run) — an honest surprise</h3>
+  <p>We expected credibility to make premium-based and TIV-based rates <em>agree</em> (we thought the disagreement was just thin-segment noise). <strong>It didn't.</strong> The correlation barely moved — <strong>0.61 → 0.63</strong> — and stayed low even among the data-rich segments. The disagreement is <strong>structural, not noise.</strong></p>
+  <div class="box plain"><span class="tag">Why they genuinely differ</span>
+    Premium-rate ranks industries by "large losses per dollar of <em>price</em>." TIV-rate ranks by "large losses per dollar of <em>insured value</em>." Those differ because the price-to-value ratio varies a lot by industry. It's like ranking restaurants by "complaints per dollar of revenue" vs "complaints per customer" — a fancy restaurant and a fast-food chain rank differently because revenue-per-customer differs. Both are valid; they answer different questions. Credibility can't reconcile them because it shrinks each base toward <em>its own</em> average.</div>
+  <div class="box why"><span class="tag">The decision — and the silver lining</span>
+    <strong>Premium stays the locked primary base</strong> (pricing-aligned, present on 99% of rows). <strong>TIV is a deliberately <em>different</em> lens, not an interchangeable one.</strong> And the disagreement is useful: the industries where premium and TIV rank-order most differently are exactly the ones where the <em>price charged is out of step with the asset value at risk</em> — a built-in pricing / underwriting flag, for free. We earlier guessed the two bases would converge; the data said otherwise, and that is the more useful answer.</div>
+
+  <h3>Output</h3>
+  <p>The final, board-safe rate table is <code>rate_table_final.csv</code> (299 segments), with the raw GLM rate, the industry complement, historical losses, the trust weight Z, and the final blended rate. This replaces <code>rate_table.csv</code> for all downstream use.</p>
+</section>
+
+<!-- ============================================================= APPENDIX -->
+<span class="anchor" id="appendix"></span>
+<section class="card">
+  <h2>Appendix — Earlier models &amp; why they failed</h2>
+  <p>Before this model, an earlier analyst ran a valuable <strong>exploration</strong>: 12 GLMs varying the denominator (TIV / premium / earned-exposure) and the distribution (Poisson / Negative Binomial). Exploration is <em>supposed</em> to make mistakes — that's how you learn the shape of the problem. Here is what each issue taught us, with the concepts explained as we go. None of these are criticisms of effort; they are the lessons that produced the model above.</p>
+
+  <h3>A. The missing year effect (the big one)</h3>
+  <p>All 12 models put the <em>year</em> into the grouping but never into the model itself. So the "fake improving frequency" time-trap (idea ⑤) was never corrected. On premium-based models this bakes a downward drift into the rate. <strong>Lesson → the year effect in §5.</strong></p>
+  <div class="box plain"><span class="tag">Concept: "on-levelling"</span>
+    "On-levelling" means restating old premiums at today's price level so they're comparable — like quoting all house prices in today's dollars. There's a classic idea — exact for ordinary regression (the Frisch-Waugh-Lovell theorem), and closely analogous for this Poisson model — that <em>adding a year dial to the model does the on-levelling for you, automatically.</em> Skip the year dial and you skip the on-levelling.</div>
+
+  <h3>B. Comparing models by AIC across different data</h3>
+  <p>The report showed an "AIC" for each model (lower = better) and invited a ranking. But that ranking is invalid here.</p>
+  <div class="box plain"><span class="tag">Concept: AIC</span>
+    AIC is a single score for comparing models — it rewards good fit and penalises complexity, and lower is better. The catch: <strong>it's only comparable when the models are scored on the exact same data.</strong> It's like comparing two students by total exam points — only fair if they sat the <em>same</em> exam with the same number of questions.</div>
+  <div class="box ex"><span class="tag">Why it broke here</span>
+    those models were summarised at different levels of detail — some had <strong>60</strong> data rows, others <strong>1,299</strong>. A 60-row model will always show a far lower AIC than a 1,299-row model simply because there are fewer rows to add up — <em>not</em> because it's better. So "Model 1's AIC is 365 and Model 3's is 1,679" cannot be read as "Model 1 is better." They sat different exams.</div>
+
+  <h3>C. The Negative Binomial "dial" was glued in place</h3>
+  <p>Half the models used a <strong>Negative Binomial</strong> distribution instead of Poisson — but with its key setting frozen at the software default.</p>
+  <div class="box plain"><span class="tag">Concept: dispersion &amp; Negative Binomial</span>
+    Poisson assumes the <em>spread</em> of counts equals the <em>average</em>. Real-world counts are often more erratic than that — some segments swing far more than Poisson expects. That extra erraticness is called <strong>over-dispersion</strong>. The <strong>Negative Binomial</strong> is Poisson's flexible cousin: it has an extra dial (called <em>alpha</em>) that controls "how much extra spread." Used right, you let the <em>data</em> set that dial.</div>
+  <div class="box warn"><span class="tag">What went wrong</span>
+    The code used the library's default and left alpha glued at 1.0 — an arbitrary setting, not the one the data prefers. So those "Negative Binomial" results answer "how good is NB at <em>exactly</em> dial = 1.0?", which is not a fair fight against Poisson. <strong>The deeper lesson:</strong> once we added <em>industry</em> to the model, the over-dispersion almost vanished (our spread ratio is 1.15). Much of the "extra erraticness" was just a missing variable, not something needing a fancier distribution. <em>Plain Poisson + good segments beat fancy distribution + poor segments.</em></div>
+
+  <h3>D. Losses quietly disappearing</h3>
+  <p>The grouping dropped any row whose region was blank. Four large losses lived in blank-region rows, so region-based models silently counted <strong>671</strong> losses while industry-based models counted <strong>675</strong>. Losses shouldn't vanish because of a missing label. <strong>Lesson → we bucket blanks into "Unknown" and keep every loss.</strong></p>
+
+  <h3>E. Segments that "never happened" broke the maths</h3>
+  <div class="box plain"><span class="tag">Concept: perfect separation</span>
+    If a segment has <em>zero</em> large losses ever (here: Government and Logging), the model tries to say "the rate is exactly zero." Mathematically it wants to push that dial to minus-infinity, and the software returns a nonsense huge number with an enormous error bar. This is called <strong>perfect separation</strong> — the model choking on "this has literally never happened."</div>
+  <p>In the report you can see it: Government's coefficient is −18 with an error bar of ±40,000 — pure noise. <strong>Lesson → credibility (Part 2) fixes this by borrowing the neighbours' rate instead of insisting on zero.</strong></p>
+
+  <h3>F. The threshold was derived from the data, and it drifts</h3>
+  <p>The "large loss" line was set at the 95th percentile of one year's losses (~$230K). Two problems: the code used 2021 only, but it was <em>described</em> as "all years" (a quiet mismatch); and a data-derived line <strong>moves every refresh</strong> — across years the 95th percentile ranges $194K–$249K. A definition that wobbles 28% isn't a definition. <strong>Lesson → we anchor to the business's fixed $200K.</strong></p>
+
+  <h3>The verdict on the earlier work</h3>
+  <div class="box ex"><span class="tag">Fair summary</span>
+    the 12-model scan was sound engineering and the <em>right instinct</em> — especially trying multiple denominators, which is exactly how we discovered that price changes are small in this book (a genuinely useful finding). The gap was that it stopped at "explore" and the headline metric (AIC) couldn't carry the weight asked of it. The model in this document is what that exploration <em>pointed toward</em>: one denominator, a year effect, plain Poisson, full segmentation, and validation gates.</div>
+</section>
+
+<!-- ============================================================= GLOSSARY -->
+<span class="anchor" id="glossary"></span>
+<section class="card">
+  <h2>Glossary</h2>
+  <table>
+    <tbody>
+      <tr><td><strong>Frequency</strong></td><td>How <em>often</em> losses happen (this project). Severity = how <em>big</em> (later phase).</td></tr>
+      <tr><td><strong>Large loss</strong></td><td>Any loss above a set dollar line. Ours: $200,000.</td></tr>
+      <tr><td><strong>Exposure</strong></td><td>The size of the book — the "per what" you divide by. We use earned premium.</td></tr>
+      <tr><td><strong>Frequency rate</strong></td><td>Large-loss count ÷ exposure. The comparable quantity.</td></tr>
+      <tr><td><strong>Segment</strong></td><td>A slice of the book: coverage type × region × industry. ~300 of them.</td></tr>
+      <tr><td><strong>GLM</strong></td><td>The "calculator" that learns a clean rate for every segment at once.</td></tr>
+      <tr><td><strong>Offset</strong></td><td>The trick that locks exposure into the model so it produces a <em>rate</em>, not a count.</td></tr>
+      <tr><td><strong>Coefficient / relativity</strong></td><td>A multiplier saying how a segment differs from baseline (e.g. 2.5×).</td></tr>
+      <tr><td><strong>Year effect</strong></td><td>One dial per year that absorbs year-wide shifts (price changes, inflation) so segment rates come out clean. = automatic on-levelling.</td></tr>
+      <tr><td><strong>On-levelling</strong></td><td>Restating old premiums at today's price level so they're comparable.</td></tr>
+      <tr><td><strong>Poisson</strong></td><td>The standard maths of counting rare events. Assumes spread ≈ average.</td></tr>
+      <tr><td><strong>Over-dispersion</strong></td><td>When real counts are more erratic than Poisson assumes.</td></tr>
+      <tr><td><strong>Negative Binomial</strong></td><td>Poisson's flexible cousin with an extra "spread" dial (alpha).</td></tr>
+      <tr><td><strong>Dispersion ratio</strong></td><td>A check on Poisson's promise. 1.0 = perfect; ours = 1.15.</td></tr>
+      <tr><td><strong>AIC</strong></td><td>A model-comparison score (lower = better) — only valid on identical data.</td></tr>
+      <tr><td><strong>Perfect separation</strong></td><td>The model breaking on a segment that has never had a loss.</td></tr>
+      <tr><td><strong>Credibility</strong></td><td>Shrinking a thin segment's rate toward its group average, by how much data backs it.</td></tr>
+      <tr><td><strong>Credibility weight (Z)</strong></td><td>A number 0–1: how much to trust a segment's own data vs. its industry average.</td></tr>
+      <tr><td><strong>Complement</strong></td><td>The fallback rate a thin segment is pulled toward — here, its industry average.</td></tr>
+      <tr><td><strong>Backtest</strong></td><td>Train on the past, predict a held-out year, check accuracy.</td></tr>
+      <tr><td><strong>TIV</strong></td><td>Total Insured Value — the value of what's insured; an alternative exposure base.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+
+<footer>
+  Large-Loss Frequency Model — methodology &amp; documentation · Living document ·
+  Parts 1 &amp; 2 complete · Built on <code>basic_data_1.csv</code> (2021–2025)
+</footer>
+
+</body>
+</html>
