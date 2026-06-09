@@ -68,7 +68,7 @@ segment with one stray loss doesn't get a wild rate:
    │   FINAL rate per segment   ★    │   →  rate_table_final.csv   (THE DELIVERABLE)
    └────────────────────────────────┘
               │
-              ▼   Part 2  (built next — see pipeline_guide.html §9)
+              ▼   Part 2  (built next — see pipeline_guide.md §9)
         expected count = Σ ( rate × projected exposure )  →  percentile / traffic-light / board narrative
 ```
 
@@ -153,8 +153,7 @@ Everything is **regenerated dynamically** each run — change the data, threshol
 | `outputs/` | dated run folders (generated) |
 | **Documentation** | |
 | [`DECISIONS.md`](src/docs/DECISIONS.md) | every modeling decision, why, what we rejected, the evidence |
-| `src/docs/model_documentation.html` | the methodology (the *why*) — concepts, validation, credibility |
-| `src/docs/pipeline_guide.html` | how the code/config/pipeline work + how to build Part 2 |
+| `src/docs/pipeline_guide.md` | how the code/config/pipeline work + how to build Part 2 |
 | `src/docs/methodology.md` | the full statistical methodology reference |
 | `src/docs/practical_guide.md` | the end-to-end implementation spec + worked example |
 | `src/config/config.reference.md` | every config field, documented |
@@ -171,4 +170,4 @@ This pipeline produces **rates**. The next phase consumes them:
 
 The hand-off spec — the formula, a worked example, and the four consistency rules
 (match the lens, match the rate level, handle unseen segments, don't re-fit) — is in
-**`src/docs/pipeline_guide.html` §9**.
+**`src/docs/pipeline_guide.md` §9**.

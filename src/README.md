@@ -97,6 +97,7 @@ other than what the config states.
 
 ## Go deeper
 
-- `docs/pipeline_guide.html` — how the code/config/pipeline work + how to build Part 2
-- `docs/model_documentation.html` — the methodology (the *why*) + validation + what didn't work
+- `docs/pipeline_guide.md` — how the code/config/pipeline work + how to build Part 2
+- `docs/methodology.md` — the full statistical methodology (the *why*)
+- `docs/DECISIONS.md` — the decisions, what we rejected, and the evidence
 - `config/config.reference.md` — every config field, documented
