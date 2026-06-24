@@ -147,8 +147,8 @@ Everything is **regenerated dynamically** each run — change the data, threshol
 
 | Path | What it is |
 |---|---|
-| `src/large_loss_freq/` | **Part 1** — the rate calibration pipeline (config-driven; see `src/README.md`) |
-| `src/premium_projection/` | **Part 2** — projects premium per segment, then × rate → expected losses (see its README) |
+| `src/large_loss_freq/` | **Step 1** — the rate calibration pipeline (config-driven; see `src/README.md`) |
+| `src/premium_projection/` | **Step 2** — projects premium per segment, then × rate → expected losses (see its README) |
 | `src/config/config.yaml` | the single source of truth for every Part-1 business choice |
 | `data/basic_data_1.csv` | the source extract (2021–2025) |
 | `outputs/` | dated run folders (generated) |
@@ -161,9 +161,9 @@ Everything is **regenerated dynamically** each run — change the data, threshol
 
 ---
 
-## 8. Part 2 — premium projection (built)
+## 8. Step 2 — premium projection (built)
 
-Part 1 produces **rates**; Part 2 (`src/premium_projection/`) produces the **premium** to
+Step 1 produces **rates**; Step 2 (`src/premium_projection/`) produces the **premium** to
 multiply them by:
 
 ```
@@ -175,11 +175,11 @@ python src/premium_projection/run.py --config src/premium_projection/config.yaml
 ```
 
 It learns a per-segment, per-month **growth factor** from history (validated by backtest:
-**~1.4% dollar-weighted error**, ~94% of segments within ±10%), applies it to the visible
-book, and — if a rate table is present — writes **expected losses per segment**. See
-`src/premium_projection/README.md`.
+**~2.7% dollar-weighted error**, ~89% of segments within ±10%), applies it to the visible
+book, and writes **expected losses per segment**. On the demo run, expected 2025 ≈ **202**
+large losses (100% rate coverage). See `src/premium_projection/README.md`.
 
-> **Note:** the two halves must share a **segment definition** *and* a **data extract**.
-> Part 1 currently calibrates on `data_1` and Part 2 projects on `data_2` (province codes
-> mapped to the 6 grouped regions); for a fully self-consistent expected-loss total,
-> calibrate both on the same file.
+> **Both steps run on `data_1` by default**, so the rate and the premium share one extract
+> and the expected-loss total is fully self-consistent. A `data_2` variant exists for each
+> step (true policy dates, slightly tighter premium fit) — but `data_2` is a different
+> extract (~5% more premium, ~2× the losses), so only use it for *both* steps together.

@@ -64,6 +64,8 @@ class Config:
     @property
     def null_region_fill(self) -> str: return self.raw["segmentation"].get("null_region_fill", "Unknown")
     @property
+    def region_map(self): return self.raw["segmentation"].get("region_map")
+    @property
     def drop_null_industry(self) -> bool: return bool(self.raw["segmentation"].get("drop_null_industry", True))
 
     # ---- calibration -----------------------------------------------------

@@ -1,6 +1,14 @@
 # =============================================================================
-# Premium Projection (Part 2) — config.
-# Projects full-year earned premium PER SEGMENT, to multiply by the Part-1 rate.
+# Premium Projection (Step 2) — DEFAULT config, on the OG data (basic_data_1.csv).
+# Both steps run on data_1 so the rate and the premium share ONE extract
+# (fully self-consistent expected-loss totals).
+#
+# data_1 has no POLEFFDATE_M/POLEXPDATE_M; FROM_DT/TO_DT serve as the policy dates
+# (validated: ~2.7% backtest WAPE, sane month-by-month growth curve). Regions are
+# already the 6 grouped rating regions, so no region_map is needed.
+#
+# Alternate: config_data2.yaml runs on basic_data_2.csv (true policy dates ->
+# slightly tighter ~1.4% WAPE, but a different extract than the rate table).
 # =============================================================================
 
 run:
@@ -8,47 +16,30 @@ run:
   output_dir: "outputs/premium"
 
 data:
-  path: "data/basic_data_2.csv"
+  path: "data/basic_data_1.csv"
   premium_col: "TOTAL_EARNED_PREMIUM"
   year_col: "ROLLING_YEAR"
-  eff_col: "POLEFFDATE_M"          # policy start date
-  exp_col: "POLEXPDATE_M"          # policy end date
+  eff_col: "FROM_DT"               # data_1's policy/coverage start
+  exp_col: "TO_DT"                 # data_1's policy/coverage end
 
 segmentation:
   keys: ["CovType", "ratingregion", "MAIN_OPGROUP"]   # same buckets as the rate table
   null_region_key: "ratingregion"
   fill_value: "Unknown"
-  # This extract codes ratingregion at province level; the canonical segment uses the
-  # 6 grouped rating regions (matches the rate table). Verified by premium-share match.
-  region_map:
-    AB: ABandT
-    NT: ABandT
-    YT: ABandT
-    NU: ABandT
-    BC: BCMS
-    MB: BCMS
-    SK: BCMS
-    NB: Atlantic
-    NS: Atlantic
-    NL: Atlantic
-    PE: Atlantic
-    COR: COR
-    NEWOR: NEWOR
-    QC: QC
+  # (no region_map — data_1 already uses the 6 grouped rating regions)
 
 calibration:
   experience_years: [2021, 2022, 2023, 2024, 2025]
-  clip_max_factor: 5.0            # cap a thin segment's factor (full >= visible, so min is 1.0)
-  min_visible_premium: 1000       # below this history, fall back to the portfolio month-factor
+  clip_max_factor: 5.0
+  min_visible_premium: 1000
 
 backtest:
-  holdout_years: [2023, 2024, 2025]   # for each, factors are learned from PRIOR years only
-  run_months: [3, 6, 9]               # test running at end of Q1 / H1 / Q3
+  holdout_years: [2023, 2024, 2025]
+  run_months: [3, 6, 9]
   within_pct: 10.0
 
-project:                          # the demo projection this run produces
-  year: 2025                      # project this year ...
-  month: 6                        # ... as if running mid-year (June)
+project:
+  year: 2025
+  month: 6
 
-# Optional: multiply the projected premium by the Part-1 rate table to get expected losses
-rate_table_glob: "outputs/**/rate_table_final.csv"
+rate_table_glob: "outputs/**/rate_table_final.csv"   # pairs with the latest Part-1 run

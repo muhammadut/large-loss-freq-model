@@ -204,6 +204,10 @@ holds the classical fit stats.)
 
 ## 9. Building Part 2 — the prediction layer (your spec)
 
+> **Status: built.** Part 2 now lives in `src/premium_projection/` (see its README). It
+> projects premium per segment via a per-segment, per-month growth factor and multiplies by
+> the rate. The spec below is the design it implements.
+
 This is what consumes the rate table. The core is one multiplication; the care is in four
 consistency rules.
 

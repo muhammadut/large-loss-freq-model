@@ -1,0 +1,72 @@
+# =============================================================================
+# Part 1 (rates) on basic_data_2.csv.
+# Use this when you want the rate table and the Part-2 premium projection to share
+# ONE data extract (fully self-consistent expected-loss totals). data_2 has the same
+# losses + premium as data_1 but codes regions at province level, so we map them to
+# the 6 grouped rating regions. data_2 has no TIV/earned-exposure, so premium is the
+# only lens and the base_agreement (premium-vs-TIV) gate is omitted.
+# Run:  python src/run.py --config src/config/config_data2.yaml
+# =============================================================================
+
+run:
+  name: "annual_recalibration_2025_data2"
+  output_dir: "outputs"
+
+data:
+  path: "data/basic_data_2.csv"
+  loss_col: "TOTAL_COVERAGE_INCURREDLOSS_M"
+  year_col: "ROLLING_YEAR"
+  cat_flag_col: "CATASTROPHENUMBER"
+  policy_period_col: "POLICYPERIOD_ID_M"
+
+large_loss:
+  threshold: 200000
+  mode: "fixed"
+  cat_scope: "assume_excluded"
+
+exposure:
+  lens: "premium"
+  columns:
+    premium: "TOTAL_EARNED_PREMIUM"     # data_2 has no TIV / earned-exposure columns
+
+segmentation:
+  keys: ["CovType", "ratingregion", "MAIN_OPGROUP"]
+  industry_key: "MAIN_OPGROUP"
+  null_region_key: "ratingregion"
+  null_region_fill: "Unknown"
+  drop_null_industry: true
+  region_map:                            # province codes -> 6 canonical grouped regions
+    AB: ABandT
+    NT: ABandT
+    YT: ABandT
+    NU: ABandT
+    BC: BCMS
+    MB: BCMS
+    SK: BCMS
+    NB: Atlantic
+    NS: Atlantic
+    NL: Atlantic
+    PE: Atlantic
+    COR: COR
+    NEWOR: NEWOR
+    QC: QC
+
+calibration:
+  experience_years: [2021, 2022, 2023, 2024, 2025]
+  reference_year: 2024
+  family: "poisson"
+  year_effect: true
+
+credibility:
+  method: "buhlmann_hierarchical"
+  level1_keys: ["CovType", "MAIN_OPGROUP"]
+  full_credibility_losses: 5
+
+validation:                              # no base_agreement gate (only one lens on data_2)
+  reconciliation:      {tol_pct: 1.0,  on_fail: "halt"}
+  dispersion:          {max_ratio: 1.5, on_fail: "warn"}
+  thin_segment_share:  {max_thin_pct: 90, on_fail: "warn"}
+  backtest:            {holdout_year: 2024, on_fail: "warn"}
+  backtest_segment:    {min_spearman: 0.45, on_fail: "warn"}
+  robustness_drop_yr:  {max_p95_move_pct: 40, on_fail: "warn"}
+  total_preservation:  {max_drift_pct: 2.0, on_fail: "warn"}

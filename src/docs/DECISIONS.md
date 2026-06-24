@@ -183,3 +183,48 @@ defensible part of the signal), on-levelled by the year effect, then credibility
 toward its industry so thin segments can't inject noise — and the whole thing reproduces a
 held-out year. That is why we present the segment rates as trustworthy, with the residual
 open items (maturity confirmation, the `K` refinement, the cat flag) listed honestly above.
+
+---
+
+## Step 2 — premium projection (decisions)
+
+### S2.1 — Project premium per segment by a growth factor, not a regression
+**Decision.** `projected full-year premium = visible premium × growth factor`, where the
+factor = `full-year ÷ visible-by-run-month`, learned per segment from history.
+**Why.** Earned premium is largely an accounting quantity (the in-force book earns forward
+from its dates); only the not-yet-written new business is uncertain, and the growth factor
+captures it empirically. **Alternative rejected — a multi-feature OLS regression.** On a
+held-out year it was off ~167% *per segment* (a global dollar-scale fit dominated by the
+biggest segments), while a simple per-segment factor was ~2.7% — so the regression added
+negative value over a transparent factor.
+
+### S2.2 — Per-segment factor, but NO credibility shrinkage
+**Decision.** Use each segment's own growth factor (lightly clipped); do **not** shrink it
+toward the portfolio. **Why.** Unlike rare large losses (Step 1), premium is *dense* — even
+a small segment has thousands of premium dollars, so its own ratio is well-measured. The
+backtest confirmed raw per-segment beats credibility-shrunk here. (The opposite of Step 1 —
+the backtest decided, not a copied recipe.)
+
+### S2.3 — The growth factor is run-month-specific
+**Decision.** Calibrate (and store) a factor per **(segment × month)**. **Why.** The later
+in the year you run, the more business is already visible, so the smaller the scale-up
+(portfolio: Feb ≈ 1.7×, Apr ≈ 1.4×, Jul ≈ 1.1×, Oct ≈ 1.0×). Cancellations are already
+netted into the historical factor, so no separate cancellation term is added.
+
+### S2.4 — Data basis: both steps run on `data_1` (the OG extract)
+**Decision.** Calibrate the rate (Step 1) and project premium (Step 2) on the **same file,
+`data_1`**, so `expected = rate × premium` is self-consistent. Step 2 reads policy dates
+from `data_1`'s `FROM_DT`/`TO_DT` (validated: ~2.7% backtest WAPE, sane month curve).
+**Why this matters.** `data_2` (the newer extract with true policy dates) is **a different
+dataset**: for the same 205,128 policies it carries ~5% more premium and **~2× the large
+losses** (1,487 vs 783 ≥ \$200K). Mixing files (rate from one, premium from the other) would
+silently inherit those differences. **Open item for the data owner:** explain the 2× loss
+gap between `data_1` and `data_2` before `data_2` is used as a loss/rate basis. Both steps
+have a `data_2` config variant for when that is resolved.
+
+### Two hard requirements for `expected = rate × premium`
+1. **Same segment definition** — both tables must use the same buckets (the 6 grouped
+   rating regions). `data_2`'s province codes are collapsed via a config `region_map`,
+   verified by a premium-share match.
+2. **Same data extract** — or the expected-loss total inherits the files' loss/premium
+   differences. The default keeps both on `data_1`.

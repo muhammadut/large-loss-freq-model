@@ -32,6 +32,12 @@ def load_and_prepare(cfg: Config) -> pd.DataFrame:
 
     df = pd.read_csv(cfg.data_path, usecols=lambda c: c in needed)
 
+    # optional: collapse fine-grained regions (e.g. province codes in some extracts)
+    # to the canonical grouped rating regions, so the segment definition is stable
+    # whichever data file is used.
+    if cfg.region_map and cfg.null_region_key in df.columns:
+        rm = cfg.region_map
+        df[cfg.null_region_key] = df[cfg.null_region_key].map(lambda v: rm.get(v, v))
     if cfg.null_region_key and cfg.null_region_key in df.columns:
         df[cfg.null_region_key] = df[cfg.null_region_key].fillna(cfg.null_region_fill)
     if cfg.drop_null_industry:

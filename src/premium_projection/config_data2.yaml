@@ -1,0 +1,58 @@
+# =============================================================================
+# Premium Projection (Step 2) — ALTERNATE config, on basic_data_2.csv.
+# data_2 has true policy start/end dates (POLEFFDATE_M / POLEXPDATE_M), which give
+# a slightly tighter backtest (~1.4% WAPE) than data_1's FROM_DT/TO_DT (~2.7%).
+# BUT data_2 is a different extract than the rate table (data_1): its premium is
+# ~5% higher and its loss volume is ~2x — so use this only if the rate table is
+# also built on data_2 (src/config/config_data2.yaml for Step 1). Otherwise the
+# default (config.yaml, on data_1) keeps both halves on one consistent extract.
+#
+# Regions are province-level here, so region_map collapses them to the 6 groups.
+# =============================================================================
+
+run:
+  name: "premium_projection_data2"
+  output_dir: "outputs/premium"
+
+data:
+  path: "data/basic_data_2.csv"
+  premium_col: "TOTAL_EARNED_PREMIUM"
+  year_col: "ROLLING_YEAR"
+  eff_col: "POLEFFDATE_M"
+  exp_col: "POLEXPDATE_M"
+
+segmentation:
+  keys: ["CovType", "ratingregion", "MAIN_OPGROUP"]
+  null_region_key: "ratingregion"
+  fill_value: "Unknown"
+  region_map:                            # province codes -> 6 canonical grouped regions
+    AB: ABandT
+    NT: ABandT
+    YT: ABandT
+    NU: ABandT
+    BC: BCMS
+    MB: BCMS
+    SK: BCMS
+    NB: Atlantic
+    NS: Atlantic
+    NL: Atlantic
+    PE: Atlantic
+    COR: COR
+    NEWOR: NEWOR
+    QC: QC
+
+calibration:
+  experience_years: [2021, 2022, 2023, 2024, 2025]
+  clip_max_factor: 5.0
+  min_visible_premium: 1000
+
+backtest:
+  holdout_years: [2023, 2024, 2025]
+  run_months: [3, 6, 9]
+  within_pct: 10.0
+
+project:
+  year: 2025
+  month: 6
+
+rate_table_glob: "outputs/**/rate_table_final.csv"

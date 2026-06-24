@@ -44,6 +44,7 @@ TIV genuinely disagree on segment ranking — the `base_agreement` gate measures
 | `keys` | the segment definition (the GLM relativities) |
 | `industry_key` | the credibility complement anchor (thin cells shrink toward their **industry**) |
 | `null_region_key` / `null_region_fill` | blanks here are bucketed (e.g. "Unknown"), never dropped — so no loss vanishes on a missing label |
+| `region_map` (optional) | collapse fine-grained regions (e.g. province codes in some extracts) to the canonical grouped rating regions, so the segment definition is stable whichever data file is used. Used by `config_data2.yaml`; omit it for `data_1` (already grouped). |
 | `drop_null_industry` | drop rows with no industry (2 rows here) |
 
 ## `calibration`
