@@ -34,6 +34,7 @@ from expected_vs_actual import expected as EX
 from expected_vs_actual import ave as AV
 from expected_vs_actual import waterfall as WF
 from expected_vs_actual import narrative as NA
+from expected_vs_actual import backtest as BT
 from expected_vs_actual import report as R
 
 
@@ -91,6 +92,12 @@ def run(config_path: str):
             "actual_reported": AC.total_for_year(actuals_df, s1cfg, cfg.current_year),
         }
 
+    # ---- walk-forward backtest (recalibrates rates + factors per fold) ------
+    print("Backtesting (walk-forward, out-of-sample) …")
+    bt, immature = BT.run_backtest(actuals_df, s1cfg, cfg2, full_ys, vis, cfg)
+    R.write_csv(bt, os.path.join(out, "backtest.csv"))
+    R.write_backtest_report(os.path.join(out, "backtest_report.md"), bt, immature, cfg.verdict_year)
+
     # ---- write artifacts ----------------------------------------------------
     R.write_csv(seg_v.sort_values("expected_losses", ascending=False),
                 os.path.join(out, "segment_ave.csv"))
@@ -103,6 +110,7 @@ def run(config_path: str):
         "dispersion": dispersion, "run_month": month, "rate_coverage_pct": round(cov_v, 1),
         "verdict_year": cfg.verdict_year, "prior_year": cfg.prior_year,
         "verdict": verdict, "waterfall": wf, "current_watch": current_watch,
+        "backtest": bt.to_dict(orient="records"), "backtest_immature": immature,
     })
     R.write_board_report(
         os.path.join(out, "board_report.md"), cfg=cfg, rate_table_path=rate_path,
@@ -119,6 +127,9 @@ def run(config_path: str):
           f"{verdict['percentile']:.0f}th pct | {verdict['band_model']} | "
           f"{verdict['traffic_light']}")
     print(f"  rate coverage {cov_v:.0f}% | rate table {os.path.basename(os.path.dirname(rate_path))}")
+    if len(bt):
+        print(f"  backtest (walk-forward): {int(bt['in_band'].sum())}/{len(bt)} OOS predictions "
+              f"inside the 5–95% band across folds {sorted(set(bt['year']))}")
     if current_watch:
         print(f"  watch {current_watch['year']}: expected ~{current_watch['expected']:.0f} "
               f"vs {current_watch['actual_reported']} reported (immature — not a verdict)")

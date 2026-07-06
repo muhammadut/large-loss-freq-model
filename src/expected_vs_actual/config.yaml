@@ -34,3 +34,10 @@ report:
   overdispersion: null
   green_band: [25, 75]        # |percentile| inside -> GREEN
   amber_band: [10, 90]        # inside (but outside green) -> AMBER; outside -> RED
+
+# Walk-forward backtest: for each fold year, rates AND premium factors are
+# recalibrated on prior years only, then used to predict that year out-of-sample.
+backtest:
+  folds: [2023, 2024]         # mature years scored out-of-sample
+  run_months: [6, 12]         # 12 = full premium known (rate model); 6 = live mid-year (both models OOS)
+  immature_years: [2025]      # shown for context, NOT scored (still developing)

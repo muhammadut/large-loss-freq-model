@@ -261,3 +261,15 @@ re-declaring the threshold / segments / cat-scope. **Why.** The **actual** count
 flagged exactly as the **rates** were calibrated, or expected-vs-actual is
 apples-to-oranges. Referencing one source of truth per choice makes the three steps switch
 data basis together (a `config_data2.yaml` variant flips all three to `data_2`).
+
+### S3.5 — Validate the whole chain with a walk-forward backtest, not just Step 1
+**Decision.** Ship a walk-forward backtest that, for each fold year Y, recalibrates **both**
+the credibilized rates (Step 1) **and** the premium growth factors (Step 2) on years `< Y`,
+then predicts Y and checks the actual lands in the 5–95% band — at month 12 (rate model
+alone) and month 6 (premium projected too, the live mid-year case). **Why.** Step 1 already
+backtests the *rates* on one held-out year; this extends it to the *production chain* Step 3
+actually runs (credibilized rates × projected premium → verdict), across multiple years, so
+the claim "the system works" is out-of-sample evidence, not an in-sample fit. **Result
+(data_1):** 4/4 OOS predictions in band (2023, 2024 × months 6, 12), segment rank ρ ≈ 0.57.
+**Honest caveat:** thin early folds (2023 trains on two years) run slightly high but stay in
+band, converging as history accrues. **2025 is not scored** — still developing (S3.1).

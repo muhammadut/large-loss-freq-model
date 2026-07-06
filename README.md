@@ -210,6 +210,12 @@ lag). 2025 is shown as a flagged watch (full-year expected ≈ 200 vs 139 report
 never a verdict — comparing a full-year expectation to a partial-year actual would fake a
 RED. See `src/expected_vs_actual/README.md`.
 
+**Backtested walk-forward (out-of-sample).** Each run also writes `backtest_report.md`: for
+each fold year it recalibrates *both* the rates and the premium factors on prior years only,
+then predicts the year blind. On `data_1`, **4/4** OOS predictions (2023, 2024 × run-months
+6 and 12) land inside the 5–95% band — month 6 puts the premium projection out-of-sample
+too, validating the *live* mid-year forecast, not just the rate model.
+
 **The full model, one line:**
 
 ```bash

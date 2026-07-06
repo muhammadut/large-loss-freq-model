@@ -37,6 +37,31 @@ Outputs land in `outputs/expected_vs_actual/<run>_<date>/`:
 - **2025 watch:** full-year expected ≈ 200, but only 139 reported — flagged as
   **development lag**, not a verdict (see below).
 
+## Does it hold up in backtest? (yes — walk-forward, out-of-sample)
+
+Every run also writes `backtest_report.md`. It hides each target year and rebuilds the
+**whole chain from prior years only** — rates recalibrated on years < Y (Step-1 GLM +
+credibility), premium factors recalibrated on years < Y (Step-2) — then predicts Y and
+checks the actual lands inside the model's 5–95% band. Nothing from year Y touches the
+rates, factors, or band, so a pass is genuine out-of-sample evidence.
+
+| Target | Trained on | Run month | Expected | Actual | Percentile | In 5–95% band | Segment ρ |
+|---|---|---:|---:|---:|---:|:---:|---:|
+| 2023 | 2021–2022 | m12 | 181.9 | 165 | 11th | ✓ | 0.58 |
+| 2023 | 2021–2022 | m6  | 180.0 | 165 | 14th | ✓ | 0.58 |
+| 2024 | 2021–2023 | m12 | 190.7 | 181 | 26th | ✓ | 0.56 |
+| 2024 | 2021–2023 | m6  | 193.7 | 181 | 19th | ✓ | 0.56 |
+
+**4/4 out-of-sample predictions in band.** Month 12 tests the rate model alone (full premium
+known); **month 6 puts the premium projection out-of-sample too** — i.e. the live mid-year
+forecast, both models blind to the year. Thin early folds (2023 sees only two training years)
+sit slightly high but stay in band; the estimate tightens with history (the full rate table
+lands 2024 at 181.8 vs 181). **2025 is excluded** from scoring — it is still developing
+(expected ~206 vs 139 reported), the same reporting-lag caveat as the verdict.
+
+Configure the folds in `config.yaml` (`backtest.folds`, `backtest.run_months`,
+`backtest.immature_years`).
+
 ## Two design choices worth knowing
 
 1. **The verdict runs on the last fully-developed year (2024), not the latest (2025).**

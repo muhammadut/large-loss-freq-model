@@ -59,6 +59,19 @@ class Config:
     @property
     def amber_band(self): return tuple(self.raw["report"].get("amber_band", [10, 90]))
 
+    # ---- walk-forward backtest -------------------------------------------
+    @property
+    def bt_folds(self):
+        """Mature years scored out-of-sample (rates + factors trained on < Y)."""
+        return list(self.raw.get("backtest", {}).get("folds", [self.prior_year, self.verdict_year]))
+    @property
+    def bt_run_months(self):
+        return list(self.raw.get("backtest", {}).get("run_months", [self.run_month]))
+    @property
+    def bt_immature(self):
+        """Still-developing years shown for context, never scored (reporting lag)."""
+        return list(self.raw.get("backtest", {}).get("immature_years", []) or [])
+
 
 def load_config(path: str) -> Config:
     with open(path, "r", encoding="utf-8") as fh:
