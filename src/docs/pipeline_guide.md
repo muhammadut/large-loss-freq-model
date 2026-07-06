@@ -204,9 +204,12 @@ holds the classical fit stats.)
 
 ## 9. Building Part 2 — the prediction layer (your spec)
 
-> **Status: built.** Part 2 now lives in `src/premium_projection/` (see its README). It
-> projects premium per segment via a per-segment, per-month growth factor and multiplies by
-> the rate. The spec below is the design it implements.
+> **Status: built (Steps 2 + 3).** The premium projection lives in
+> `src/premium_projection/` (Step 2) and the expected-vs-actual output layer — percentile,
+> traffic-light, attribution waterfall, board narrative — lives in
+> `src/expected_vs_actual/` (Step 3; see its README). The spec below is the design they
+> implement: the "core" and rules 1–4 are Step 2/3's contract, and "What to output" is
+> exactly what Step 3 writes to `board_report.md`.
 
 This is what consumes the rate table. The core is one multiplication; the care is in four
 consistency rules.

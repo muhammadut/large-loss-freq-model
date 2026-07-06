@@ -1,0 +1,28 @@
+# =============================================================================
+# Expected vs Actual (Step 3) — data_2 variant.
+# Points ALL THREE steps at the data_2 extract, so the rate, the premium, and the
+# actual counts share one basis.
+#
+# CAUTION: data_2 carries ~2x the large losses of data_1 (1,487 vs 783 >= $200K)
+# for the same policies. That gap is an OPEN ITEM for the data owner (see
+# src/docs/DECISIONS.md, S2.4). Use this variant only once the gap is explained;
+# it exists so the three-step chain is switchable in one place when it is.
+# =============================================================================
+
+run:
+  name: "expected_vs_actual_data2"
+  output_dir: "outputs/expected_vs_actual"
+
+upstream:
+  step1_config: "src/config/config_data2.yaml"
+  step2_config: "src/premium_projection/config_data2.yaml"
+  rate_table_glob: "outputs/**/*data2*/rate_table_final.csv"   # the data_2 rate table
+
+report:
+  verdict_year: 2024
+  prior_year: 2023
+  current_year: 2025
+  run_month: 12
+  overdispersion: null
+  green_band: [25, 75]
+  amber_band: [10, 90]

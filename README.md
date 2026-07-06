@@ -68,12 +68,13 @@ segment with one stray loss doesn't get a wild rate:
    │   FINAL rate per segment   ★    │   →  rate_table_final.csv   (THE DELIVERABLE)
    └────────────────────────────────┘
               │
-              ▼   Part 2  (built next — see pipeline_guide.md §9)
-        expected count = Σ ( rate × projected exposure )  →  percentile / traffic-light / board narrative
+              ▼   Step 2 (premium projection)  +  Step 3 (expected vs actual) — both built
+        expected count = Σ ( rate × projected premium )  →  percentile / traffic-light / board narrative
 ```
 
-This repo covers everything **down to the rate table**. The forward projection
-(turning rates into a board-facing expected-vs-actual number) is the next phase.
+This repo covers the model **end to end**: Step 1 → the rate table, Step 2 → projected
+premium, Step 3 → the board-facing expected-vs-actual verdict (GREEN/AMBER/RED + waterfall
++ narrative).
 
 ---
 
@@ -149,12 +150,13 @@ Everything is **regenerated dynamically** each run — change the data, threshol
 |---|---|
 | `src/large_loss_freq/` | **Step 1** — the rate calibration pipeline (config-driven; see `src/README.md`) |
 | `src/premium_projection/` | **Step 2** — projects premium per segment, then × rate → expected losses (see its README) |
-| `src/config/config.yaml` | the single source of truth for every Part-1 business choice |
+| `src/expected_vs_actual/` | **Step 3** — expected vs actual: percentile, traffic-light, waterfall, board narrative (see its README) |
+| `src/config/config.yaml` | the single source of truth for every Step-1 business choice |
 | `data/basic_data_1.csv` | the source extract (2021–2025) |
 | `outputs/` | dated run folders (generated) |
 | **Documentation** | |
-| [`DECISIONS.md`](src/docs/DECISIONS.md) | every modeling decision, why, what we rejected, the evidence |
-| `src/docs/pipeline_guide.md` | how the code/config/pipeline work + how to build Part 2 |
+| [`DECISIONS.md`](src/docs/DECISIONS.md) | every modeling decision (Steps 1–3), why, what we rejected, the evidence |
+| `src/docs/pipeline_guide.md` | how the code/config/pipeline work across the three steps |
 | `src/docs/methodology.md` | the full statistical methodology reference |
 | `src/docs/practical_guide.md` | the end-to-end implementation spec + worked example |
 | `src/config/config.reference.md` | every config field, documented |
@@ -176,10 +178,42 @@ python src/premium_projection/run.py --config src/premium_projection/config.yaml
 
 It learns a per-segment, per-month **growth factor** from history (validated by backtest:
 **~2.7% dollar-weighted error**, ~89% of segments within ±10%), applies it to the visible
-book, and writes **expected losses per segment**. On the demo run, expected 2025 ≈ **202**
-large losses (100% rate coverage). See `src/premium_projection/README.md`.
+book, and writes **expected losses per segment**. See `src/premium_projection/README.md`.
 
 > **Both steps run on `data_1` by default**, so the rate and the premium share one extract
 > and the expected-loss total is fully self-consistent. A `data_2` variant exists for each
 > step (true policy dates, slightly tighter premium fit) — but `data_2` is a different
 > extract (~5% more premium, ~2× the losses), so only use it for *both* steps together.
+
+---
+
+## 9. Step 3 — expected vs actual (the board deliverable, built)
+
+Step 3 (`src/expected_vs_actual/`) closes the loop: it multiplies the Step-1 rate by the
+Step-2 projected premium, compares the **expected** count to the **actual**, and turns it
+into the board answer — a percentile, a traffic-light, an attribution waterfall, and a
+plain-English narrative.
+
+```bash
+python src/expected_vs_actual/run.py --config src/expected_vs_actual/config.yaml
+#   -> outputs/expected_vs_actual/<run>/board_report.md   (the deliverable)
+```
+
+**Demo verdict (2024, the last fully-developed year):** expected **181.8**, actual **181**
+→ **50th percentile**, **GREEN** (normal range 160–204, 100% rate coverage). The waterfall
+explains the year-over-year move: `2023 exp 162.3 → +17.3 volume → +2.2 mix → +0.0 rate
+(frozen table) → 2024 exp 181.8 → −0.8 random → 181 actual` — reconciling exactly.
+
+The verdict runs on **2024**, not 2025, on purpose: actual counts by year are
+140/158/165/181/**139**, and 2025 *falls* because it is still being reported (development
+lag). 2025 is shown as a flagged watch (full-year expected ≈ 200 vs 139 reported so far),
+never a verdict — comparing a full-year expectation to a partial-year actual would fake a
+RED. See `src/expected_vs_actual/README.md`.
+
+**The full model, one line:**
+
+```bash
+python src/run.py --config src/config/config.yaml                                   # Step 1 → rates
+python src/premium_projection/run.py --config src/premium_projection/config.yaml    # Step 2 → premium
+python src/expected_vs_actual/run.py --config src/expected_vs_actual/config.yaml    # Step 3 → verdict
+```

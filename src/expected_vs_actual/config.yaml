@@ -1,0 +1,36 @@
+# =============================================================================
+# Expected vs Actual (Step 3) — DEFAULT config, on the OG data (basic_data_1.csv).
+#
+# Step 3 consumes the two upstream steps and produces the board deliverable:
+#   expected count = Σ (Step-1 rate × Step-2 projected premium)   vs   actual
+#   -> percentile, traffic-light, attribution waterfall, board narrative.
+#
+# It reuses the Step-1 and Step-2 configs (below) so the actual large-loss count
+# is flagged EXACTLY as the rates were calibrated (same $200K threshold, same
+# cat-scope, same segments). Change the data basis in ONE place (those configs)
+# and this step follows.
+# =============================================================================
+
+run:
+  name: "expected_vs_actual"
+  output_dir: "outputs/expected_vs_actual"
+
+upstream:
+  step1_config: "src/config/config.yaml"                 # rates + actual-loss flagging
+  step2_config: "src/premium_projection/config.yaml"     # premium projection machinery
+  rate_table_glob: "outputs/**/rate_table_final.csv"     # newest rate table (the frozen deliverable)
+
+report:
+  # The VERDICT runs on the last fully-developed year (matches Step-1 reference_year):
+  verdict_year: 2024
+  prior_year: 2023            # the waterfall bridges prior -> verdict year
+  # The most recent year is still being reported (development lag) — shown only as
+  # a flagged watch, never a verdict. Set to null to omit.
+  current_year: 2025
+  run_month: 12               # 12 = full-year premium known (rate-model verdict, no projection error)
+
+  # Confidence band + traffic light. overdispersion: null -> auto-read Step-1's
+  # dispersion from run_report.json (1.15 here => Poisson is appropriate).
+  overdispersion: null
+  green_band: [25, 75]        # |percentile| inside -> GREEN
+  amber_band: [10, 90]        # inside (but outside green) -> AMBER; outside -> RED

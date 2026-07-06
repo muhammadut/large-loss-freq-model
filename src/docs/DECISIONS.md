@@ -228,3 +228,36 @@ have a `data_2` config variant for when that is resolved.
    verified by a premium-share match.
 2. **Same data extract** — or the expected-loss total inherits the files' loss/premium
    differences. The default keeps both on `data_1`.
+
+---
+
+## Step 3 — Expected vs Actual
+
+### S3.1 — The verdict runs on the last fully-developed year, not the latest
+**Decision.** The GREEN/AMBER/RED verdict is taken on **2024**; the most recent year
+(2025) is shown only as a flagged *watch*. **Why.** Actual large-loss counts by year are
+140 / 158 / 165 / 181 / **139** — 2025 *falls* despite premium growth, the signature of
+reporting/development lag (claims take time to be reported and to breach $200K). Comparing
+a full-year *expectation* (~200) to a partial-year *actual* (139) would manufacture a false
+RED. This mirrors Step 1 reading rates at `reference_year: 2024`. **V1 limitation:** no IBNR
+/ count-development factor yet (the practical guide flags it for Phase 2).
+
+### S3.2 — Consume the frozen rate table; never re-fit
+**Decision.** Step 3 reads `rate_table_final.csv` and multiplies; it does not re-run the
+GLM. **Why.** The rate table changes only at the annual recalibration (Step 1). A
+consequence, made explicit in the report: the attribution waterfall's **rate effect is ~0**
+between recalibrations, so a year-over-year move in expected losses is volume + mix + noise.
+
+### S3.3 — Poisson band unless Step 1's dispersion says otherwise
+**Decision.** Put a **Poisson** interval around the expected count; widen to Negative
+Binomial (variance = φ·μ) only if the dispersion exceeds the Step-1 gate tolerance (1.5).
+**Why.** Consistency with Step 1's own standard — dispersion here is **1.15**, so plain
+Poisson is adequate. The dispersion is read automatically from the rate table's
+`run_report.json`, so the band tracks the model rather than a hard-coded assumption.
+
+### S3.4 — Orchestrate the upstream configs, don't restate them
+**Decision.** Step 3's config points at the Step-1 and Step-2 configs rather than
+re-declaring the threshold / segments / cat-scope. **Why.** The **actual** count must be
+flagged exactly as the **rates** were calibrated, or expected-vs-actual is
+apples-to-oranges. Referencing one source of truth per choice makes the three steps switch
+data basis together (a `config_data2.yaml` variant flips all three to `data_2`).
