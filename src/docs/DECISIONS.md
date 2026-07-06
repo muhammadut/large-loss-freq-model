@@ -19,7 +19,7 @@
 | D2 | Large-loss threshold | **$200,000 fixed** | The risk-tolerance definition — aligned across pricing/risk/reporting; a data-derived line drifts. |
 | D3 | Segmentation | Coverage × Region × Industry | The dimensions that drive large-loss propensity and are populated. |
 | D4 | Rate-inflation fix | **GLM with a year effect** | On-levels premium automatically; the missing piece in the first attempt. |
-| D5 | Reference year | **2024** (last developed) | The newest year is still maturing and would understate the rate. |
+| D5 | Calibration window | **2021–2024**, read at 2024 | The immature newest year (2025) is excluded — including it deflated rates ~10%. |
 | D6 | Exposure lens | **Premium** primary, TIV cross-check | Premium is complete, pricing-aligned, and far more stable than TIV. |
 | D7 | Distribution | **Poisson** (not Negative Binomial) | Once industry is in the model, the data is ~equidispersed (1.15). |
 | D8 | Thin segments | **Hierarchical Bühlmann credibility** | 86% of segments are too thin to trust raw; shrink to same-industry. |
@@ -72,15 +72,28 @@ the rate-inflation drift into the rate. This was the single most consequential g
 first attempt: the year column was used to split rows but never entered the model, so the
 on-levelling never happened.
 
-### D5 — Reference year = 2024 (the last fully-developed year)
+### D5 — Exclude the immature year from calibration; reference year = 2024
 **Context.** Large losses are reported and reserved over time (development / IBNR), so the
-newest year's count is always incomplete. **Decision.** Fit on all years (2021–2025) but
-read the rate at **2024**. **Why.** Anchoring to a still-maturing year would understate
-the rate. **Evidence.** The newest year's large-loss count is ~20–25% below the prior year
-at *every* threshold (the signature of immaturity, not a quiet year). Recorded each run in
-`run_report.json` → `maturity_evidence`. **Caveat / open item:** we *infer* immaturity from
-the count drop; confirming it would need valuation/claim-development data not in this
-extract.
+newest year's count is always incomplete. **Decision (updated).** Calibrate the rates on the
+**fully-developed years only — 2021–2024** — and read the rate at **2024**. The immature
+**2025 is excluded from the Step-1 window** entirely (it is still used downstream in Step 2
+premium and Step 3 projection/watch, where premium completeness is what matters).
+**Why the window, not just the reference level.** We originally kept 2025 in the window and
+only anchored the *level* at 2024, on the logic that the year effect on-levels everything.
+Measuring it proved that wrong: 2025 has a complete premium denominator but a half-reported
+loss numerator (139 vs a ~190 trend), so including it **deflated the rates ~10% median**
+(169 of 296 segments moved >10%). The year effect pins the reference *level* but cannot
+un-bias the **segment relativities** (GLM, +11% median when 2025 removed) or the
+**credibility complements** (+10%), and **73% of segments are thin** and lean on those
+complements. The old "perfect" fit (expected 181.8 vs actual 181) was partly this deflation;
+the clean 2021–2024 calibration gives **187.8** — honestly a touch high, consistent with the
+backtest. **Evidence.** The newest year's count is ~20–25% below the prior year at *every*
+threshold (immaturity signature, not a quiet year), recorded in `run_report.json →
+maturity_evidence`. **Consequence to disclose:** with the immature year gone, the
+`total_preservation` gate now shows credibility drift of **+3.7%** (was masked at +0.4% by
+the 2025 deflation) — the true size of the V1 credibility approximation, a documented
+Phase-2 item, not a new error. **Caveat:** we *infer* immaturity from the count drop;
+confirming it needs claim-development data not in this extract.
 
 ### D6 — Exposure lens = premium (primary), TIV (cross-check)
 **Decision.** Calibrate the production rate on **earned premium**; also produce a **TIV**
@@ -273,3 +286,17 @@ the claim "the system works" is out-of-sample evidence, not an in-sample fit. **
 (data_1):** 4/4 OOS predictions in band (2023, 2024 × months 6, 12), segment rank ρ ≈ 0.57.
 **Honest caveat:** thin early folds (2023 trains on two years) run slightly high but stay in
 band, converging as history accrues. **2025 is not scored** — still developing (S3.1).
+
+### S3.6 — A segment-analysis starter: four business lenses on the shipped rates
+**Decision.** Ship a per-segment report (`segment_analysis.md` + `segment_master.csv`)
+answering the four questions a business asks once it trusts the total: **(1) Concentration**
+— where the exposure is (top 5 segments = 33% of expected losses; 63 of 296 carry 80%);
+**(2) Accuracy** — biggest per-segment misses, each tagged *structural* (persistent across
+years, a pricing signal — e.g. COR·Retail under-rated) vs *noise* (one-off spike);
+**(3) Drift** — segments running hot/cold vs their own rate (O/E trend), the emerging-risk
+early warning; **(4) Confidence** — how much expected loss sits on thin, low-credibility
+rates (the "big bets to validate"). **Why.** Portfolio-total accuracy (verdict + backtest)
+does not tell you *where* to act; these are four high-value cuts to get the business moving.
+**How.** No new modelling — expected = frozen rate x each year's premium vs actual; drift
+restricted to >=5-loss segments; "structural" needs a multi-year pattern. Deliberately a
+**starter** — severity, sub-industry, and per-policy cuts are the obvious next depth.

@@ -22,6 +22,9 @@ Outputs land in `outputs/expected_vs_actual/<run>_<date>/`:
 | File | What it is |
 |---|---|
 | `board_report.md` | **the deliverable** — verdict, waterfall, segment movers, current-year watch, caveats |
+| `segment_analysis.md` | **four business lenses per segment** — concentration, accuracy, drift, confidence |
+| `segment_master.csv` | every segment × every metric (rate, Z, expected/actual/O-E per year) |
+| `backtest_report.md` | walk-forward out-of-sample validation (see below) |
 | `segment_ave.csv` | per-segment expected vs actual (verdict year) |
 | `ave_summary.csv` | the portfolio verdict row |
 | `waterfall.csv` | the attribution bridge (volume / mix / rate / random) |
@@ -30,12 +33,31 @@ Outputs land in `outputs/expected_vs_actual/<run>_<date>/`:
 
 ## What it produces (demo run, `data_1`)
 
-- **Verdict — 2024:** expected **181.8**, actual **181**, **50th percentile**, **GREEN**
-  (normal range 160–204, 100% rate coverage).
-- **Waterfall 2023 → 2024:** 162.3 `+17.3 volume` `+2.2 mix` `+0.0 rate` = 181.8 expected
-  `−0.8 random` = 181 actual. The pieces reconcile exactly.
-- **2025 watch:** full-year expected ≈ 200, but only 139 reported — flagged as
+- **Verdict — 2024:** expected **187.8**, actual **181**, **33rd percentile**, **GREEN**
+  (normal range ~168–214, 100% rate coverage).
+- **Waterfall 2023 → 2024:** volume + mix + (frozen) rate + random reconcile exactly to the
+  actual.
+- **2025 watch:** full-year expected ≈ 206, but only 139 reported — flagged as
   **development lag**, not a verdict (see below).
+
+*(Rates are calibrated on 2021–2024; the immature 2025 is excluded from Step-1 calibration —
+including it deflated rates ~10%. See `DECISIONS.md` D5.)*
+
+## Segment analysis (`segment_analysis.md`) — four business lenses
+
+Once the total is trusted, the business needs to know *where* to act. This report answers four
+questions on the shipped rates (no new modelling — frozen rate × each year's premium vs actual):
+
+1. **Concentration** — where the exposure is. *(Top 5 segments carry ~33% of expected losses;
+   63 of 296 carry 80% — all top-5 are Realty.)*
+2. **Accuracy** — the biggest per-segment misses, each tagged **structural** (persistent across
+   years → a pricing signal, e.g. COR·Retail under-rated) or **noise** (a one-off spike).
+3. **Emerging risk (drift)** — segments running **hot / cold** vs their own rate (O/E trend),
+   limited to ≥5-loss segments so it isn't tiny-segment noise.
+4. **Confidence** — how much expected loss rests on **thin, low-credibility** rates (the "big
+   bets to validate"). *(~62% of expected losses sit in credible segments.)*
+
+It's a **starter** — severity, sub-industry, and per-policy cuts are the obvious next depth.
 
 ## Does it hold up in backtest? (yes — walk-forward, out-of-sample)
 

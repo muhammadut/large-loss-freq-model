@@ -105,10 +105,14 @@ current data:
 | Evidence | Result | Means |
 |---|---|---|
 | **Out-of-sample backtest** | trained on 2021–23, predicted **184** for 2024; actual **181** | the model genuinely predicts a year it never saw |
-| **Dispersion** | **1.15** (≈1) | plain Poisson's spread assumption holds — no fancier model needed |
-| **Robustness** | drop the newest year → final rates move ≤29%, **0** segments >50% | the rates don't hinge on one year |
-| **Total preservation** | credibility drift **+0.43%** | smoothing redistributes risk without moving the total |
-| **Credibility** | 86% of segments are thin → shrunk to industry | no single-loss segment sets a published rate |
+| **Dispersion** | **1.12** (≈1) | plain Poisson's spread assumption holds — no fancier model needed |
+| **Robustness** | drop the newest year → final-rate p95 move **33%**, **0** segments >50% | the rates don't hinge on one year |
+| **Total preservation** | credibility drift **+3.7%** (warn) | the honest size of the V1 credibility approximation, once the immature year is excluded (Phase-2 refinement noted) |
+| **Credibility** | 88% of segments are thin → shrunk to industry | no single-loss segment sets a published rate |
+
+> **Calibrated on fully-developed years (2021–2024).** The immature 2025 is deliberately
+> excluded — including it deflated rates ~10% (its losses aren't fully reported yet). See
+> `DECISIONS.md` D5.
 
 The full rationale — every decision, what we rejected, and the evidence — is in
 **[`DECISIONS.md`](src/docs/DECISIONS.md)**.
@@ -199,10 +203,11 @@ python src/expected_vs_actual/run.py --config src/expected_vs_actual/config.yaml
 #   -> outputs/expected_vs_actual/<run>/board_report.md   (the deliverable)
 ```
 
-**Demo verdict (2024, the last fully-developed year):** expected **181.8**, actual **181**
-→ **50th percentile**, **GREEN** (normal range 160–204, 100% rate coverage). The waterfall
-explains the year-over-year move: `2023 exp 162.3 → +17.3 volume → +2.2 mix → +0.0 rate
-(frozen table) → 2024 exp 181.8 → −0.8 random → 181 actual` — reconciling exactly.
+**Demo verdict (2024, the last fully-developed year):** expected **187.8**, actual **181**
+→ **33rd percentile**, **GREEN** (normal range ~168–214, 100% rate coverage). It also writes
+an attribution waterfall (volume / mix / rate / random) and a **segment analysis** — four
+business lenses (concentration, per-segment accuracy, emerging-risk drift, confidence) in
+`segment_analysis.md`.
 
 The verdict runs on **2024**, not 2025, on purpose: actual counts by year are
 140/158/165/181/**139**, and 2025 *falls* because it is still being reported (development

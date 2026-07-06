@@ -131,12 +131,26 @@ def gate_robustness(df: pd.DataFrame, cfg: Config, full_cred: pd.DataFrame) -> G
     g = cfg.gates["robustness_drop_yr"]
     newest = max(cfg.experience_years)
     kept = [y for y in cfg.experience_years if y != newest]
+    # Read both fits at a COMMON year level, else a level shift masquerades as
+    # instability. Normally that level is the reference year; but if the reference
+    # IS the newest (dropped) year — which happens once the immature year has been
+    # excluded from the window — fall back to the latest kept year and re-read the
+    # baseline at that same level so the two are comparable.
+    ref = cfg.reference_year if cfg.reference_year in kept else max(kept)
     p = panel_mod.build_panel(df, cfg, cfg.lens_col, kept)
     m, _ = model_mod.fit(p, cfg)
-    glm = model_mod.extract_rates(m, p, cfg, reference_year=cfg.reference_year)
+    glm = model_mod.extract_rates(m, p, cfg, reference_year=ref)
     cred_drop, _ = cred_mod.apply_credibility(glm, p, cfg)
 
-    merged = full_cred[cfg.seg_keys + ["final_rate"]].merge(
+    if ref == cfg.reference_year:
+        base = full_cred
+    else:
+        p0 = panel_mod.build_panel(df, cfg, cfg.lens_col, cfg.experience_years)
+        m0, _ = model_mod.fit(p0, cfg)
+        glm0 = model_mod.extract_rates(m0, p0, cfg, reference_year=ref)
+        base, _ = cred_mod.apply_credibility(glm0, p0, cfg)
+
+    merged = base[cfg.seg_keys + ["final_rate"]].merge(
         cred_drop[cfg.seg_keys + ["final_rate"]], on=cfg.seg_keys, suffixes=("_all", "_drop"))
     corr = float(merged["final_rate_all"].corr(merged["final_rate_drop"]))
     rel = (merged["final_rate_drop"] / merged["final_rate_all"] - 1).abs() * 100

@@ -38,8 +38,15 @@ segmentation:
   drop_null_industry: true
 
 calibration:
-  experience_years: [2021, 2022, 2023, 2024, 2025]
-  reference_year: 2024                # MUST be the last fully-DEVELOPED year (2025 still maturing)
+  # Calibrate on fully-DEVELOPED years only. 2025 is deliberately EXCLUDED: its
+  # premium is complete but its large-loss counts are still being reported
+  # (139 vs a ~190 trend), so including it deflates the rates ~10% (it biases both
+  # the GLM relativities and the credibility complements, which 73% of thin
+  # segments lean on — the year effect pins the LEVEL to 2024 but cannot un-bias
+  # those). 2025 is still used downstream (Step 2 premium, Step 3 projection/watch),
+  # where premium completeness is what matters.
+  experience_years: [2021, 2022, 2023, 2024]
+  reference_year: 2024                # the last fully-DEVELOPED year
   family: "poisson"                   # only "poisson" is implemented (NB rejected at load)
   year_effect: true                   # the on-leveling term — do not disable
 

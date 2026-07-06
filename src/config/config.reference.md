@@ -50,8 +50,8 @@ TIV genuinely disagree on segment ranking — the `base_agreement` gate measures
 ## `calibration`
 | field | meaning | guidance |
 |---|---|---|
-| `experience_years` | the calibration window | 5 years here |
-| `reference_year` | the year-level the rate is read at | **MUST be the last fully-developed year.** The newest year is still maturing and would understate the rate. |
+| `experience_years` | the calibration window | **fully-developed years only** — 2021–2024 here. The immature newest year (2025) is excluded: its losses aren't fully reported, and including it deflates rates ~10% (biases the GLM relativities and the credibility complements, which the year effect can't undo). It is still used downstream for premium/projection. |
+| `reference_year` | the year-level the rate is read at | **MUST be the last fully-developed year** (2024) and be in `experience_years`. Anchoring to a still-maturing year would understate the rate. |
 | `family` | model family | **Only `poisson` is implemented** — any other value is rejected at config load (statsmodels GLM holds NB dispersion fixed, a trap; the dispersion gate flags if NB is warranted). |
 | `year_effect` | include `C(year)` | **Keep `true`.** This is the on-leveling term; without it the rate is biased by year-wide rate/inflation shifts. |
 
