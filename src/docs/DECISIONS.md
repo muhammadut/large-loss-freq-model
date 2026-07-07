@@ -287,8 +287,14 @@ the claim "the system works" is out-of-sample evidence, not an in-sample fit. **
 **Honest caveat:** thin early folds (2023 trains on two years) run slightly high but stay in
 band, converging as history accrues. **2025 is not scored** — still developing (S3.1).
 
-### S3.6 — A segment-analysis starter: four business lenses on the shipped rates
-**Decision.** Ship a per-segment report (`segment_analysis.md` + `segment_master.csv`)
+---
+
+## Step 4 — Segment analysis
+
+### S4.1 — A segment-analysis starter: four business lenses on the shipped rates
+**Decision.** Ship it as its own step (`src/segment_analysis/`, standalone: own run script,
+config, and a plain-English `segment_analysis_explained.md`) — a per-segment report
+(`segment_analysis.md` + `segment_master.csv`)
 answering the four questions a business asks once it trusts the total: **(1) Concentration**
 — where the exposure is (top 5 segments = 33% of expected losses; 63 of 296 carry 80%);
 **(2) Accuracy** — biggest per-segment misses, each tagged *structural* (persistent across

@@ -22,8 +22,6 @@ Outputs land in `outputs/expected_vs_actual/<run>_<date>/`:
 | File | What it is |
 |---|---|
 | `board_report.md` | **the deliverable** — verdict, waterfall, segment movers, current-year watch, caveats |
-| `segment_analysis.md` | **four business lenses per segment** — concentration, accuracy, drift, confidence |
-| `segment_master.csv` | every segment × every metric (rate, Z, expected/actual/O-E per year) |
 | `backtest_report.md` | walk-forward out-of-sample validation (see below) |
 | `segment_ave.csv` | per-segment expected vs actual (verdict year) |
 | `ave_summary.csv` | the portfolio verdict row |
@@ -43,21 +41,11 @@ Outputs land in `outputs/expected_vs_actual/<run>_<date>/`:
 *(Rates are calibrated on 2021–2024; the immature 2025 is excluded from Step-1 calibration —
 including it deflated rates ~10%. See `DECISIONS.md` D5.)*
 
-## Segment analysis (`segment_analysis.md`) — four business lenses
+## Going deeper per segment → Step 4
 
-Once the total is trusted, the business needs to know *where* to act. This report answers four
-questions on the shipped rates (no new modelling — frozen rate × each year's premium vs actual):
-
-1. **Concentration** — where the exposure is. *(Top 5 segments carry ~33% of expected losses;
-   63 of 296 carry 80% — all top-5 are Realty.)*
-2. **Accuracy** — the biggest per-segment misses, each tagged **structural** (persistent across
-   years → a pricing signal, e.g. COR·Retail under-rated) or **noise** (a one-off spike).
-3. **Emerging risk (drift)** — segments running **hot / cold** vs their own rate (O/E trend),
-   limited to ≥5-loss segments so it isn't tiny-segment noise.
-4. **Confidence** — how much expected loss rests on **thin, low-credibility** rates (the "big
-   bets to validate"). *(~62% of expected losses sit in credible segments.)*
-
-It's a **starter** — severity, sub-industry, and per-policy cuts are the obvious next depth.
+Board-level movers are in `board_report.md` (section 3). The full **four-lens segment analysis**
+(concentration, per-segment accuracy, emerging-risk drift, confidence) is its own step —
+see **`src/segment_analysis/`**.
 
 ## Does it hold up in backtest? (yes — walk-forward, out-of-sample)
 

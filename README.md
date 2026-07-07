@@ -155,6 +155,7 @@ Everything is **regenerated dynamically** each run — change the data, threshol
 | `src/large_loss_freq/` | **Step 1** — the rate calibration pipeline (config-driven; see `src/README.md`) |
 | `src/premium_projection/` | **Step 2** — projects premium per segment, then × rate → expected losses (see its README) |
 | `src/expected_vs_actual/` | **Step 3** — expected vs actual: percentile, traffic-light, waterfall, board narrative (see its README) |
+| `src/segment_analysis/` | **Step 4** — four business lenses per segment: concentration, accuracy, drift, confidence (see its README + `segment_analysis_explained.md`) |
 | `src/config/config.yaml` | the single source of truth for every Step-1 business choice |
 | `data/basic_data_1.csv` | the source extract (2021–2025) |
 | `outputs/` | dated run folders (generated) |
@@ -227,4 +228,14 @@ too, validating the *live* mid-year forecast, not just the rate model.
 python src/run.py --config src/config/config.yaml                                   # Step 1 → rates
 python src/premium_projection/run.py --config src/premium_projection/config.yaml    # Step 2 → premium
 python src/expected_vs_actual/run.py --config src/expected_vs_actual/config.yaml    # Step 3 → verdict
+python src/segment_analysis/run.py --config src/segment_analysis/config.yaml         # Step 4 → per-segment
 ```
+
+## 10. Step 4 — segment analysis (where to act, built)
+
+Steps 1–3 give a trustworthy portfolio total; Step 4 (`src/segment_analysis/`) answers **where
+to act** with four lenses on the shipped rates — **concentration** (top 5 segments = ~33% of
+expected losses, all Realty), **accuracy** (biggest per-segment misses tagged *structural* vs
+*noise*), **drift** (segments running hot/cold vs their own rate — emerging risk), and
+**confidence** (how much expected loss rests on thin rates). Writes `segment_analysis.md` +
+`segment_master.csv`; a zero-jargon walkthrough is in `src/segment_analysis/segment_analysis_explained.md`.

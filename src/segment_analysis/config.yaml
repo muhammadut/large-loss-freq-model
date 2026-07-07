@@ -1,0 +1,31 @@
+# =============================================================================
+# Segment analysis (Step 4) — DEFAULT config, on the OG data (basic_data_1.csv).
+#
+# Four business lenses on the SHIPPED rates (no new model):
+#   1. Concentration — where the large-loss exposure is
+#   2. Accuracy      — biggest per-segment misses, tagged structural vs noise
+#   3. Drift         — segments running hot/cold vs their own rate (emerging risk)
+#   4. Confidence    — how much expected loss rests on thin, low-credibility rates
+#
+# It reuses the Step-1 and Step-2 configs so the actual counts are flagged EXACTLY
+# as the rates were calibrated (same $200K threshold, cat-scope, segments).
+# Run Step 1 (rates) and Step 2 need not be run first — this reads the latest
+# rate_table_final.csv and rebuilds the premium panels itself.
+# =============================================================================
+
+run:
+  name: "segment_analysis"
+  output_dir: "outputs/segment_analysis"
+
+upstream:
+  step1_config: "src/config/config.yaml"                 # rates + actual-loss flagging
+  step2_config: "src/premium_projection/config.yaml"     # premium panels
+  rate_table_glob: "outputs/**/rate_table_final.csv"     # newest frozen rate table
+
+analysis:
+  years: [2022, 2023, 2024]     # trend window; the LAST year anchors concentration/accuracy
+  top_segments: 12              # rows shown in the concentration table
+  material_expected: 1.0        # min expected losses for a segment to be "material"
+  drift_min_losses: 5           # ignore thinner segments in the drift view (too noisy)
+  drift_hot: 1.25               # recent O/E at/above this -> HOT
+  drift_cold: 0.75              # recent O/E at/below this -> COLD

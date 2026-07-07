@@ -1,0 +1,59 @@
+# Step 4 — Segment analysis
+
+Once the portfolio total is trusted (Step 3), the business needs to know **where to act**.
+This step answers that with four lenses on the **shipped rates** — no new model, just the
+Step-1 rate × each year's premium vs the actual counts.
+
+> **New here? Read [`segment_analysis_explained.md`](segment_analysis_explained.md)** — a
+> standalone, zero-jargon walkthrough of all four lenses and what to do with them.
+
+## Run it
+
+```bash
+python src/segment_analysis/run.py --config src/segment_analysis/config.yaml
+```
+
+It reads the **latest** `rate_table_final.csv` (so run Step 1 at least once first),
+rebuilds the Step-2 premium panels itself, and writes to
+`outputs/segment_analysis/<run>_<date>/`:
+
+| File | What it is |
+|---|---|
+| `segment_analysis.md` | the four business lenses (below) |
+| `segment_master.csv` | every segment × every metric (rate, Z, expected/actual/O-E per year) |
+
+## The four lenses
+
+1. **Concentration** — *where is the exposure?* A few segments carry most of it (top 5 ≈ 33%
+   of expected large losses on `data_1`; all Realty). Where pricing/monitoring belongs.
+2. **Accuracy** — *where is the model off, and does it matter?* Biggest per-segment misses,
+   each tagged **structural** (persistent across years → a pricing signal) vs **noise**
+   (a one-off spike). Plus the segment rank calibration (Spearman).
+3. **Emerging risk (drift)** — *what's changing?* Segments running **hot / cold** vs their own
+   rate (O/E trend), limited to ≥5-loss segments so it isn't tiny-segment noise.
+4. **Confidence** — *which numbers can we trust?* How much expected loss sits on **thin,
+   low-credibility** rates — the "big bets to validate" before any pricing move.
+
+## Dependencies & consistency
+
+Self-contained given Steps 1 & 2 exist. It imports:
+- `large_loss_freq` (Step 1) — to flag actual losses the **same way the rates were calibrated**
+  ($200K threshold, cat-scope, segment keys). This is what keeps expected-vs-actual honest.
+- `premium_projection` (Step 2) — to rebuild each year's premium per segment.
+
+Business choices are not restated here; the config points at the Step-1 and Step-2 configs:
+
+```yaml
+upstream:
+  step1_config: "src/config/config.yaml"
+  step2_config: "src/premium_projection/config.yaml"
+  rate_table_glob: "outputs/**/rate_table_final.csv"
+```
+
+Tune the lenses (trend years, drift thresholds, materiality) in `config.yaml → analysis`.
+
+## Caveats
+
+It **counts**, it doesn't **cost** (frequency, not severity). Percentages mislead on tiny
+segments — which is why concentration weights by expected losses and drift ignores sub-5-loss
+segments. A **starter**: severity, sub-industry, and per-policy cuts are the obvious next depth.

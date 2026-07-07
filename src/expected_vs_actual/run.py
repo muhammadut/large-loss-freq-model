@@ -35,7 +35,6 @@ from expected_vs_actual import ave as AV
 from expected_vs_actual import waterfall as WF
 from expected_vs_actual import narrative as NA
 from expected_vs_actual import backtest as BT
-from expected_vs_actual import segments as SEG
 from expected_vs_actual import report as R
 
 
@@ -99,18 +98,7 @@ def run(config_path: str):
     R.write_csv(bt, os.path.join(out, "backtest.csv"))
     R.write_backtest_report(os.path.join(out, "backtest_report.md"), bt, immature, cfg.verdict_year)
 
-    # ---- segment-level analysis (four business views) -----------------------
-    print("Building segment analysis …")
-    seg_years = [cfg.verdict_year - 2, cfg.verdict_year - 1, cfg.verdict_year]
-    master, vy = SEG.build_master(rates, full_ys, actuals_df, s1cfg, cfg2, seg_years)
-    conc_all, conc_top = SEG.concentration(master)
-    under, over, rho_seg = SEG.accuracy(master, seg_years)
-    drift_moving, _ = SEG.drift(master, seg_years)
-    seg_views = {"conc_all": conc_all, "conc_top": conc_top, "under": under, "over": over,
-                 "rho": rho_seg, "drift_moving": drift_moving, "confidence": SEG.confidence(master)}
-    R.write_segment_report(os.path.join(out, "segment_analysis.md"), master, vy, seg_years, seg_views)
-    R.write_csv(master.drop(columns=["seg"]).sort_values("expected", ascending=False),
-                os.path.join(out, "segment_master.csv"))
+    # (Per-segment analysis is its own step now — see src/segment_analysis/.)
 
     # ---- write artifacts ----------------------------------------------------
     R.write_csv(seg_v.sort_values("expected_losses", ascending=False),
@@ -144,8 +132,6 @@ def run(config_path: str):
     if len(bt):
         print(f"  backtest (walk-forward): {int(bt['in_band'].sum())}/{len(bt)} OOS predictions "
               f"inside the 5–95% band across folds {sorted(set(bt['year']))}")
-    print(f"  segments: top5 = {conc_all.head(5)['contribution_pct'].sum():.0f}% of expected losses | "
-          f"{len(drift_moving)} running hot/cold | rank rho {rho_seg:.2f}")
     if current_watch:
         print(f"  watch {current_watch['year']}: expected ~{current_watch['expected']:.0f} "
               f"vs {current_watch['actual_reported']} reported (immature — not a verdict)")
