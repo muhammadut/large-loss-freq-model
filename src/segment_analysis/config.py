@@ -43,6 +43,10 @@ class Config:
     def drift_hot(self): return float(self.raw["analysis"].get("drift_hot", 1.25))
     @property
     def drift_cold(self): return float(self.raw["analysis"].get("drift_cold", 0.75))
+    @property
+    def significance_alpha(self): return float(self.raw["analysis"].get("significance_alpha", 0.05))
+    @property
+    def n_dossiers(self): return int(self.raw["analysis"].get("dossiers", 6))
 
 
 def load_config(path: str) -> Config:

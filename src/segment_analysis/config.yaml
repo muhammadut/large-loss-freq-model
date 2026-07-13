@@ -29,3 +29,5 @@ analysis:
   drift_min_losses: 5           # ignore thinner segments in the drift view (too noisy)
   drift_hot: 1.25               # recent O/E at/above this -> HOT
   drift_cold: 0.75              # recent O/E at/below this -> COLD
+  significance_alpha: 0.05      # a segment's actual is a "signal" if its Poisson tail p < this
+  dossiers: 6                   # number of significant segments to write a deep-dive dossier for

@@ -20,7 +20,8 @@ rebuilds the Step-2 premium panels itself, and writes to
 | File | What it is |
 |---|---|
 | `segment_analysis.md` | the four business lenses (below) |
-| `segment_master.csv` | every segment × every metric (rate, Z, expected/actual/O-E per year) |
+| `segment_investigation.md` | **validates the misses** — significance test, calibration check, per-segment dossiers |
+| `segment_master.csv` | every segment × every metric (rate, Z, expected/actual/O-E per year, p-values, classification) |
 
 ## The four lenses
 
@@ -33,6 +34,20 @@ rebuilds the Step-2 premium panels itself, and writes to
    rate (O/E trend), limited to ≥5-loss segments so it isn't tiny-segment noise.
 4. **Confidence** — *which numbers can we trust?* How much expected loss sits on **thin,
    low-credibility** rates — the "big bets to validate" before any pricing move.
+
+## Investigating the misses (`segment_investigation.md`)
+
+The accuracy lens flags where actual ≠ expected; this report answers **is that miss real, or
+just rare-event noise?** Large-loss counts are small and lumpy, so most big-looking gaps are
+chance. For each material segment it computes the Poisson probability of the actual given the
+predicted rate, checks the portfolio calibration (how many segments fall outside their band vs
+how many chance predicts), and writes a **dossier** on the statistically real ones — multi-year
+trajectory, whether the losses are spread across many policies or one event, and the loss sizes.
+
+On `data_1` it validates the model (2 of 40 material segments significantly high, 0 low —
+right at chance) and separates the two real signals: `COVCP · COR · Retail` (a persistent,
+broad-based under-rating → investigate) from `COVCP · ABandT · Realty` (cold-then-hot, correctly
+rated over the window → just watch). Tune `significance_alpha` and `dossiers` in `config.yaml`.
 
 ## Dependencies & consistency
 

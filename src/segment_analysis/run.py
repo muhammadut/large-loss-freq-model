@@ -28,6 +28,7 @@ import pandas as pd
 from segment_analysis.config import load_config
 from segment_analysis import actuals as AC
 from segment_analysis import segments as SEG
+from segment_analysis import investigate as INV
 from segment_analysis import report as R
 
 from premium_projection.config import load_config as load_step2
@@ -71,6 +72,17 @@ def run(config_path: str):
              "rho": rho, "drift_moving": drift_moving, "confidence": SEG.confidence(master)}
 
     R.write_segment_report(os.path.join(out, "segment_analysis.md"), master, vy, years, views)
+
+    # ---- investigation: validate the misses, dossier the real ones ----------
+    print("Investigating segment-level misses …")
+    summary, mat, dossiers, detail = INV.investigate(
+        rates, full_ys, actuals_df, s1cfg, cfg2, years,
+        alpha=cfg.significance_alpha, material=cfg.material_expected, n_dossiers=cfg.n_dossiers)
+    R.write_investigation_report(os.path.join(out, "segment_investigation.md"),
+                                 summary, mat, dossiers, years)
+
+    # enrich the master CSV with the significance verdict, then write it
+    master = master.merge(detail, on=cfg2.keys, how="left")
     R.write_csv(master.drop(columns=["seg"]).sort_values("expected", ascending=False),
                 os.path.join(out, "segment_master.csv"))
 
@@ -81,6 +93,9 @@ def run(config_path: str):
     print(f"  concentration: top5 = {conc_all.head(5)['contribution_pct'].sum():.0f}% of expected losses")
     print(f"  accuracy: rank rho {rho:.2f} | {len(under)} under / {len(over)} over shown")
     print(f"  drift: {len(drift_moving)} segments running hot/cold")
+    print(f"  investigation: {summary['n_sig_high']} sig-high / {summary['n_sig_low']} sig-low of "
+          f"{summary['n_material']} material (chance ~{summary['expected_each']:.0f} each) -> "
+          f"{'well-calibrated' if summary['well_calibrated'] else 'review'}; {len(dossiers)} dossiers")
     print(f"\n  outputs -> {out}{os.sep}")
     print("=" * 70)
     return {"out": out, "master": master}
