@@ -156,6 +156,7 @@ Everything is **regenerated dynamically** each run — change the data, threshol
 | `src/premium_projection/` | **Step 2** — projects premium per segment, then × rate → expected losses (see its README) |
 | `src/expected_vs_actual/` | **Step 3** — expected vs actual: percentile, traffic-light, waterfall, board narrative (see its README) |
 | `src/segment_analysis/` | **Step 4** — four business lenses per segment: concentration, accuracy, drift, confidence (see its README + `segment_analysis_explained.md`) |
+| `src/development/` | **Step 5** — claim-count development (IBNR): develops the immature current year to ultimate; property passes through, liability is scaled up (see its README) |
 | `src/config/config.yaml` | the single source of truth for every Step-1 business choice |
 | `data/basic_data_1.csv` | the source extract (2021–2025) |
 | `outputs/` | dated run folders (generated) |

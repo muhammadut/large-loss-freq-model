@@ -1,0 +1,12 @@
+# Large-loss COUNT development triangle (SAMPLE — replace with the 10-year extract).
+# One row per (accident_year x coverage). Each asof_* column is a valuation snapshot:
+# the reported count of large losses for that accident year AS KNOWN on that date.
+# Counts grow (and can shrink — subrogation/reserve moves) as claims develop.
+# COVCP = commercial property (develops fast), COVCL = commercial liability (long tail).
+accident_year,covtype,asof_2024-12-31,asof_2025-06-30,asof_2025-12-31,asof_2026-06-30
+2022,COVCL,22,24,34,34
+2022,COVCP,125,126,124,124
+2023,COVCL,17,26,30,31
+2023,COVCP,136,133,133,133
+2024,COVCL,4,7,17,25
+2024,COVCP,165,171,164,164

@@ -1,0 +1,31 @@
+# =============================================================================
+# Claim-count development (Step 5) — turn a large-loss count triangle into a
+# per-coverage "% developed by age" pattern, and develop the immature current
+# year to ultimate.
+#
+# Property develops fast (factor ~1.0); liability has a long tail. The two are
+# handled separately (the triangle carries a `covtype` column).
+# =============================================================================
+
+run:
+  name: "claim_development"
+  output_dir: "outputs/development"
+
+triangle:
+  path: "src/development/development_triangle_sample.csv"   # committed sample; swap for the 10-year extract in data/
+  accident_year_col: "accident_year"
+  covtype_col: "covtype"
+  # valuation-snapshot columns are auto-detected by the "asof_YYYY-MM-DD" prefix
+
+develop:
+  method: "chain_ladder"        # chain_ladder | bornhuetter_ferguson
+  # Tail factor from the LAST observed age to true ultimate, per coverage.
+  # Liability settles over ~6 years but the sample triangle only reaches 42
+  # months, so a tail loading is needed (ASSUMPTION — refine with the 10-yr data).
+  tail_factor:
+    COVCP: 1.00                 # property: already developed, no tail
+    COVCL: 1.10                 # liability: long tail past our window (placeholder)
+  # Bornhuetter-Ferguson (optional) blends the reported count with a prior
+  # expected-ultimate = Step-1 frequency x Step-2 premium. Leave null to run pure
+  # chain-ladder on the triangle alone (the standalone demo).
+  expected_prior_csv: null
