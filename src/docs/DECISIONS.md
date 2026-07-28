@@ -306,3 +306,21 @@ does not tell you *where* to act; these are four high-value cuts to get the busi
 **How.** No new modelling — expected = frozen rate x each year's premium vs actual; drift
 restricted to >=5-loss segments; "structural" needs a multi-year pattern. Deliberately a
 **starter** — severity, sub-industry, and per-policy cuts are the obvious next depth.
+
+---
+
+## Step 5 — Claim development (the immature current year)
+
+### S5.1 — Split by coverage; property as-is, liability by "partials"
+**Decision.** Score the current, undeveloped accident year by handling the two coverages
+separately: **property** (COVCP, ~100% developed by 12 months) is compared full-expected vs
+full-reported as today; **liability** (COVCL, ~35% developed at 12 months, settles over ~3–6
+years) is compared **at the same development age** — `expected × %developed(age)` vs the count
+reported by that age ("partials"). Both are one formula with a coverage-specific `%developed`
+(property's ~100% ⇒ unchanged). **Why.** The immaturity is almost entirely liability, and the
+same-maturity comparison is the most defensible verdict — no waiting for the tail, no
+extrapolating a final number. **Caveat.** Liability partials are small counts, so the verdict
+uses a Poisson normal range (not an exact match) to avoid false alarms; develop-to-ultimate
+(chain-ladder / Bornhuetter-Ferguson) is an optional *provisional* planning number alongside.
+Full write-up in `immature_year_approach.md`; engine in `src/development/`. **Open:** the longer
+unified extract locks the liability factors + tail before this wires into the Step-3 verdict.

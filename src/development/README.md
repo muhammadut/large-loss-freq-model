@@ -6,6 +6,10 @@ triangle** (the same loss count seen at successive as-of dates) into a per-cover
 **"% developed by age"** pattern, and develops the reported count to ultimate — so the year can
 be scored fairly instead of two years late.
 
+> **The overall approach and the verdict design are in
+> [`../docs/immature_year_approach.md`](../docs/immature_year_approach.md)** — property as-is,
+> liability compared at the same development age ("partials"). This module is the engine behind it.
+
 ## The one finding that shapes everything
 
 **It's a liability problem, not a property problem.**
