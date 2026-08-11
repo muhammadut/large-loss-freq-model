@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Entry point for Step 4 — Segment analysis.
 
-    python src/segment_analysis/run.py --config src/segment_analysis/config.yaml
+    python src/step_4_segment_analysis/run.py --config src/step_4_segment_analysis/config.yaml
 
 Reads the latest Step-1 rate table, rebuilds the Step-2 premium panels, counts the
 actual large losses, and writes the four-lens segment report in
-outputs/segment_analysis/<run>_<date>/:
-    segment_analysis.md   the four business lenses (concentration / accuracy / drift / confidence)
+outputs/step_4_segment_analysis/<run>_<date>/:
+    step_4_segment_analysis.md   the four business lenses (concentration / accuracy / drift / confidence)
     segment_master.csv    every segment × every metric (rate, Z, expected/actual/O-E per year)
 """
 from __future__ import annotations
@@ -25,14 +25,14 @@ except Exception:
 
 import pandas as pd
 
-from segment_analysis.config import load_config
-from segment_analysis import actuals as AC
-from segment_analysis import segments as SEG
-from segment_analysis import investigate as INV
-from segment_analysis import report as R
+from step_4_segment_analysis.config import load_config
+from step_4_segment_analysis import actuals as AC
+from step_4_segment_analysis import segments as SEG
+from step_4_segment_analysis import investigate as INV
+from step_4_segment_analysis import report as R
 
-from premium_projection.config import load_config as load_step2
-from premium_projection import factors as F
+from step_2_premium.config import load_config as load_step2
+from step_2_premium import factors as F
 
 
 def _latest_rate_table(glob_pattern: str) -> str:
@@ -71,7 +71,7 @@ def run(config_path: str):
     views = {"conc_all": conc_all, "conc_top": conc_top, "under": under, "over": over,
              "rho": rho, "drift_moving": drift_moving, "confidence": SEG.confidence(master)}
 
-    R.write_segment_report(os.path.join(out, "segment_analysis.md"), master, vy, years, views)
+    R.write_segment_report(os.path.join(out, "step_4_segment_analysis.md"), master, vy, years, views)
 
     # ---- investigation: validate the misses, dossier the real ones ----------
     print("Investigating segment-level misses …")

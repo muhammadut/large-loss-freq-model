@@ -292,9 +292,9 @@ band, converging as history accrues. **2025 is not scored** — still developing
 ## Step 4 — Segment analysis
 
 ### S4.1 — A segment-analysis starter: four business lenses on the shipped rates
-**Decision.** Ship it as its own step (`src/segment_analysis/`, standalone: own run script,
+**Decision.** Ship it as its own step (`src/step_4_segment_analysis/`, standalone: own run script,
 config, and a plain-English `segment_analysis_explained.md`) — a per-segment report
-(`segment_analysis.md` + `segment_master.csv`)
+(`step_4_segment_analysis.md` + `segment_master.csv`)
 answering the four questions a business asks once it trusts the total: **(1) Concentration**
 — where the exposure is (top 5 segments = 33% of expected losses; 63 of 296 carry 80%);
 **(2) Accuracy** — biggest per-segment misses, each tagged *structural* (persistent across
@@ -324,3 +324,33 @@ uses a Poisson normal range (not an exact match) to avoid false alarms; develop-
 (chain-ladder / Bornhuetter-Ferguson) is an optional *provisional* planning number alongside.
 Full write-up in `immature_year_approach.md`; engine in `src/development/`. **Open:** the longer
 unified extract locks the liability factors + tail before this wires into the Step-3 verdict.
+
+### S5.2 — Liability pipeline on the 10-year extract: exposure rate, recent-weighted ladder, empirical band
+**Decision.** With the 10-year policy-level liability extract in hand, build the liability track as
+its own runnable pipeline (`src/step_5_liability_development/`): triangle → **ladder** → **rate** → expected-by-now
+→ **band** → verdict, with four design choices locked. **(1) Rate base = earned EXPOSURE, not
+premium** — premium is contaminated by rate changes; exposure is the correct frequency base
+(premium kept for readability only). **(2) Ladder is recent-weighted for the early rungs** —
+reporting has *slowed* (age-0 large losses per $M fell from ~35 in 2018 to ~4–9 in recent years), so
+the pooled "% visible at age 0" is stale; recent years (>= 2021) give the early factors → age-0
+**10.7%** (not the pooled ~21%), age-12 **30.2%**; later rungs pooled (51.0/67.6/81.6/92.6%).
+**(3) The band is measured empirically per age**, from the recent history of the count at that age
+(per $M, last 5 accident years) scaled to the current book — not a plugged-in uncertainty. It is
+wide where the data is noisy (age 0) and tighter where steadier (age 12). **(4) The band method was
+chosen by a walk-forward shoot-out and made configurable** (`verdict.band_method` ∈ {min–max,
+mean±2σ, 10–90th %ile, poisson, **hybrid** = year-to-year CV + Poisson}, default **hybrid**), scored
+on coverage + false-alarm + width over 27 held-out cells. **Shoot-out result:** poisson coverage 30%
+(disqualified — fires on 70% of normal cells); std 96% (over-covers); min_max 89% (fragile);
+percentile 85% (tightest but can't extrapolate + jumpy at n=3–7); **hybrid 89%, 0 false-ALARMs** →
+default. percentile beats hybrid on the *measurable* axis, but the backtest can't see extrapolation
+or small-n fragility, and catch-rate is untestable (no labelled bad years), so under asymmetric cost
+hybrid wins; percentile stays swappable. **Why.** The band *is* the alarm, so it must be measured and
+validated, not asserted; the drift finding shows a single pooled ladder over-expects on fresh years.
+**(5) Verdict is band-driven, not a fixed %developed gate:** `actual>hi` → ALARM (any age);
+`actual<lo` → LOW; `band_lo ≤ too_early_lo_floor` → TOO EARLY (a low year can't be told from
+early-reporting noise); else OK. On the current book: 2024 (age 12, [7–35]) → **OK** (17); 2025
+(age 0, [1–20]) → **TOO EARLY** (4). **Caveat.** Grain is a *policy* crossing $200k (not a single
+claim) — confirm intent; the tail is an assumption; catch-rate is not directly testable (no labelled
+bad years). **Status:** implemented and running (`bands.py` + `pipeline.py`), subagent-validated.
+**Open:** fold the rate into `step_1_frequency` (liability config) + merge with property in
+`step_3_expected_vs_actual`; the `rate → frequency` rename.

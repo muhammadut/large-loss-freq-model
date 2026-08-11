@@ -1,93 +1,105 @@
-# Scoring the current (undeveloped) accident year — approach
+# Scoring the current (undeveloped) accident year — liability method
 
-> Status: **agreed direction, hardening on data.** The engine that computes the development
-> pattern is built (`src/development/`). Wiring it into the Step-3 verdict waits on a unified
-> extract that covers a longer history and shares one basis with the frequency/premium model.
+> Status: **implemented and running** (`src/step_5_liability_development/`, `bands.py` + `pipeline.py`). The
+> pipeline uses the **recent-weighted ladder + empirical per-age band (method configurable)**
+> described below; the band method was picked by a walk-forward shoot-out. Property is developed
+> within ~12 months and is scored as-is elsewhere — **this doc is liability only.**
 
 ## The problem
 
-The Step-3 verdict compares **expected** large losses (`frequency × premium`) to **actual**.
-For a *mature* year that is fair. For the **current** accident year it is not: large claims take
-time to be **reported** and to grow past the **$200,000** threshold, so the actual count is
-understated at any early valuation. Comparing a full-year expected to a partly-reported actual
-manufactures a false alarm (e.g. a recent year showing ~139 against an expected ~205 is mostly
-un-emerged claims, not a good year).
+Liability large losses (a policy whose incurred crosses **$200,000**) emerge slowly — a claim
+grows for years as it settles. So the current accident year's count is understated at every early
+valuation. Comparing a partly-emerged actual to a full-year expected manufactures a false alarm
+(a recent year showing ~4 against a full-year ~48 is un-emerged claims, not a good year).
 
-## The key finding: it is a liability problem, not a property problem
+## The data
 
-From a valuation triangle (the same loss count seen at successive as-of dates):
+One dated year-end **snapshot** of the book, kept for 10 years, lined up per policy: for each
+policy we have its incurred at age 0 and re-measured at +1..+5 years. This reconstructs
+development. Losses are in dollars; a null future column means *not yet observable* (not zero);
+zero-loss policies are kept (they are the exposure base). Grain: a **policy** crossing $200k
+(confirm this matches the business definition of a "large loss").
 
-| Coverage | Develops | % reported at 12 months | Adjustment |
-|---|---|---:|---|
-| Commercial property (COVCP) | fast | ~100% | **none — use as-is** |
-| Commercial liability (COVCL) | slow (settles over ~3–6 years) | ~35% | **yes — compare partials** |
+## The pipeline (data → verdict)
 
-So the two coverages are handled separately. Segments already carry `CovType`, so this splits
-cleanly. (Development is *net*: counts can fall as well as rise — subrogation, reserve reductions
-below threshold — so factors are net, not one-way.)
+1. **Triangle** — count policies ≥ $200k by `(accident_year × age)`. Pure counting; reconciles
+   to the raw file.
+2. **Ladder = "% visible by age"** (timing only). Built from the finished years. **Reporting has
+   slowed over the decade** (large losses seen per $M at year-end fell from ~35 in 2018 to ~4–9 in
+   recent years), so the early rungs are estimated from **recent years only** (≈ 10.7% visible at
+   year-end, ≈ 30.2% at +1); later rungs (+2 onward: ≈ 51.0/67.6/81.6/92.6%) are stable across all
+   years. Recent-weighting the early rungs is deliberate — using the old, faster number would
+   over-expect and cry wolf.
+3. **Rate = frequency per unit of earned EXPOSURE** (not premium — premium is distorted by rate
+   changes; exposure is the correct base for frequency). Developed large losses ÷ exposure, per
+   segment (`ratingregion × MAIN_OPGROUP`), **credibilised** (hierarchical Bühlmann `Z = E/(E+K)`:
+   trust a segment's own data in proportion to its exposure, shrink the rest toward the
+   same-industry complement, then the portfolio). Stable across years (a leave-one-out test
+   predicts a held-out year within ~9%). These are **rates** — multiplied by a segment's own
+   (often tiny) exposure they give a small, realistic expected count.
+4. **Expected-by-now** = `rate × exposure × %visible(current age)`.
+5. **The band (the critical piece — it *is* the alarm).** The normal range is **measured from the
+   historical spread of the count at that age**, scaled to the current book's size — not asserted.
+   Because age-0 counts are noisy (high year-to-year variation) the band is wide there; age-1
+   counts are steady, so the band is tight and a real verdict is possible from year 1. The exact
+   band construction is an **open question tested by backtest** (see below).
+6. **Verdict** — actual-so-far vs the band. The alarm (upper) side always works; the **low** side
+   is only meaningful when the band floor sits materially above zero. So: `actual > hi` → **ALARM**
+   (fires at any age, so a genuine blowout is never missed); `actual < lo` → **LOW**;
+   `band_lo ≤ too_early_lo_floor` → **TOO EARLY** (a low year can't yet be told from early-reporting
+   noise — honest, not "fine"); else → **OK**. On the current book: **2024** (age 12, band [7–35])
+   → **OK** (actual 17); **2025** (age 0, band [1–20]) → **TOO EARLY** (actual 4, only a blow-up is
+   detectable this early).
+7. **Tracking** — every accident year is re-scored each cycle; a cohort firms from TOO EARLY to a
+   real OK as it ages (~year 1–2).
 
-## The method: compare at the same stage of development ("partials")
+## The band method — tested and resolved
 
-Do **not** wait for the year to finish, and do **not** extrapolate a final number for the verdict.
-Instead compare like-for-like at the current development age:
+The band decides when the alarm trips, so it is not asserted. Five candidates were run through a
+**walk-forward shoot-out** (`bands.shootout`): over every held-out (year, age) cell, build the band
+from the *earlier* years only and check whether the real count lands inside. Scored on **coverage**
+(share of normal cells inside the 10–90 band; nominal 80%), **false-alarm rate**, false-*ALARM*
+(wrongly crying blow-up), and band **width**. 27 cells, recent 5-year window:
 
-```
-   Property   →  full expected        vs  full reported          (today's method; it is developed)
-   Liability  →  expected-BY-THIS-AGE  vs  reported-BY-THIS-AGE   (the "partials")
+| Method | Coverage | False-alarm | False-*ALARM* | Rel. width | Verdict |
+|---|---|---|---|---|---|
+| Empirical 10–90th %ile | 85% | 15% | 4% | 1.46 | tightest, but can't extrapolate + jumpy at small n |
+| Min–max | 89% | 11% | 0% | 1.86 | fragile (stretches to worst single year) |
+| **Hybrid** *(default)* | **89%** | **11%** | **0%** | 1.91 | year-to-year CV + Poisson bounce; 0 false-ALARMs; extrapolates; stated coverage |
+| Mean ± 2σ | 96% | 4% | 0% | 2.64 | over-covers → no real alarm |
+| Poisson only | 30% | 70% | 22% | 0.57 | **disqualified** — fires on 70% of normal cells |
 
-   expected-by-age(coverage) = expected_ultimate(coverage) × %developed(coverage, age)
-```
+**Outcome:** `poisson` is decisively out (it treats normal year-to-year drift as an alarm);
+`std`/`min_max` over-cover or are fragile. `percentile` edges `hybrid` on the *measurable* axis
+(coverage + width) — but the backtest **cannot** see the two places `percentile` is weak: it can't
+extrapolate past the worst observed year (an alarm must fire on the *unprecedented*), and its
+quantiles are jumpy at n = 3–7. Under an asymmetric cost (a missed blow-up ≫ a false "looks light")
+and `hybrid`'s zero false-ALARM record, **`hybrid` is the default**. Catch-rate itself is *not*
+testable — history has no labelled bad years; we state that honestly. The method is **configurable**
+(`verdict.band_method`) so `percentile` can be swapped in without code changes.
 
-Both are the **same formula** with a coverage-specific `%developed` — property's is ~100%, so its
-comparison is unchanged; liability's is < 100%, so it compares partials.
+## Validation
 
-**Worked example (real data, liability, accident year 2024 at 12 months):**
-- Expected by 12 months ≈ liability full-year expected × ~35% ≈ **17** (agrees with the historical
-  count at that age).
-- Reported by 12 months = **17** → **normal**. No waiting, no forecast.
-- Had it shown ~35, that is outside the normal range → a genuine signal (liability running hot).
+- **Rate** — leave-one-year-out prediction of a held-out year (~9% mean error: 2019 +17%, 2020 +5%,
+  2021 −4%, 2022 −12%). Confirms the rate is stable. (Does *not* validate the ladder — the shared
+  development factor cancels.)
+- **Ladder** — leave-one-year-out development test (mean |error| ~119% projecting the ultimate from
+  age 0, ~103% from age 12, ~86% from age 24, ~31% from age 36). This is *why* the young-year band
+  is wide and age 0 is TOO EARLY.
+- **Band** — the walk-forward coverage/false-alarm shoot-out above.
 
-**Critical caution — small numbers.** Liability partials are small (single digits at early ages),
-so "did we hit the number exactly" is the wrong test. Put a **Poisson normal range** around the
-expected partial (expect ~3 → 0–7 is normal). Skipping this cries wolf every period.
+## Honest limits (state to stakeholders)
 
-**Optional companion (planning, not the verdict):** develop the reported count to ultimate —
-`reported ÷ %developed`, or Bornhuetter-Ferguson `reported + expected × (1 − %developed)` which
-leans on the frequency prior while the year is immature — clearly labelled a provisional estimate
-that trues up on each re-run.
+- The brand-new year (age 0) is the least certain — real noise, not a defect; its honest output is
+  a wide range, not a crisp call, plus the disaster alarm.
+- Reporting speed is **drifting** (slowing) — re-fit the early ladder rungs each year.
+- The tail past the observed window is an **assumption** until history extends.
+- Thin segments lean heavily on their industry complement (credibility).
 
-## How the data is organized
+## Code
 
-A **triangle**: `(accident_year × coverage × development_age) → cumulative count of large losses`.
-Build it by counting each **dated snapshot** of the loss data and relabelling the valuation date
-as an **age** (months since the accident year ended) so different years line up:
-
-```
-                    age 6   age 12   age 18 ...
-   AY2023 liability            17       26
-   AY2024 liability    7       17       25
-```
-
-Two structural points:
-- **Coarse triangle, granular expected.** Development *speed* is a property of the **coverage**
-  (not region/industry), so the triangle only needs `accident_year × coverage × age`. The detailed
-  expected stays per segment (from the frequency model); multiply each segment's expected by *its
-  coverage's* `%developed`. Two tables joined on coverage.
-- **The one discipline: keep dated snapshots.** The triangle is "the same book counted at different
-  dates" — archive every pull with its as-of date, or it cannot be reconstructed later.
-
-## In production
-
-Each reporting cycle: pull the latest data; count the current year by coverage; property is used
-as-is; liability is compared at its current age (partials) with a widened normal range; the current
-year is labelled **provisional — developing** and firms up on every re-run. Prior mature years are
-**final**.
-
-## What is built vs open
-
-- **Built:** `src/development/` — triangle → per-coverage `%developed(age)` (chain-ladder), plus
-  develop-to-ultimate (chain-ladder / Bornhuetter-Ferguson) and a per-coverage tail factor for
-  liability's settlement beyond the observed window. Runs on a committed sample triangle.
-- **Open:** the longer unified extract (locks liability factors + tail); wiring the partials verdict
-  into Step 3; and a terminology pass (report large-losses-per-$M as **frequency**, since "rate"
-  reads as premium).
+`src/step_5_liability_development/` (self-contained, runnable): `pipeline.py` (triangle → recent-weighted ladder →
+credibilised exposure rate → empirical-band verdict → two backtests), `bands.py` (the five band
+methods + walk-forward shoot-out), `config.yaml`, `run.py`. Reuses the credibility approach from
+`src/step_1_frequency/`. Next (not yet done): fold the rate step into `step_1_frequency` (liability
+config) and merge with the property verdict in `step_3_expected_vs_actual`; the `rate → frequency` rename.

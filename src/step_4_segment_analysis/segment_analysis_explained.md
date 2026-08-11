@@ -272,11 +272,11 @@ Reproduce it (run Step 1 at least once first, so a rate table exists):
 
 ```bash
 python src/run.py --config src/config/config.yaml                                 # Step 1 → rates
-python src/segment_analysis/run.py --config src/segment_analysis/config.yaml       # → this report
+python src/step_4_segment_analysis/run.py --config src/step_4_segment_analysis/config.yaml       # → this report
 ```
 
-That second command writes `segment_analysis.md` (the technical version of this) and
-`segment_master.csv` (all ~300 slices × every metric) into a dated `outputs/segment_analysis/…`
+That second command writes `step_4_segment_analysis.md` (the technical version of this) and
+`segment_master.csv` (all ~300 slices × every metric) into a dated `outputs/step_4_segment_analysis/…`
 folder.
 
 ---

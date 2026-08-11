@@ -10,16 +10,16 @@ Step-1 rate × each year's premium vs the actual counts.
 ## Run it
 
 ```bash
-python src/segment_analysis/run.py --config src/segment_analysis/config.yaml
+python src/step_4_segment_analysis/run.py --config src/step_4_segment_analysis/config.yaml
 ```
 
 It reads the **latest** `rate_table_final.csv` (so run Step 1 at least once first),
 rebuilds the Step-2 premium panels itself, and writes to
-`outputs/segment_analysis/<run>_<date>/`:
+`outputs/step_4_segment_analysis/<run>_<date>/`:
 
 | File | What it is |
 |---|---|
-| `segment_analysis.md` | the four business lenses (below) |
+| `step_4_segment_analysis.md` | the four business lenses (below) |
 | `segment_investigation.md` | **validates the misses** — significance test, calibration check, per-segment dossiers |
 | `segment_master.csv` | every segment × every metric (rate, Z, expected/actual/O-E per year, p-values, classification) |
 
@@ -52,16 +52,16 @@ rated over the window → just watch). Tune `significance_alpha` and `dossiers` 
 ## Dependencies & consistency
 
 Self-contained given Steps 1 & 2 exist. It imports:
-- `large_loss_freq` (Step 1) — to flag actual losses the **same way the rates were calibrated**
+- `step_1_frequency` (Step 1) — to flag actual losses the **same way the rates were calibrated**
   ($200K threshold, cat-scope, segment keys). This is what keeps expected-vs-actual honest.
-- `premium_projection` (Step 2) — to rebuild each year's premium per segment.
+- `step_2_premium` (Step 2) — to rebuild each year's premium per segment.
 
 Business choices are not restated here; the config points at the Step-1 and Step-2 configs:
 
 ```yaml
 upstream:
   step1_config: "src/config/config.yaml"
-  step2_config: "src/premium_projection/config.yaml"
+  step2_config: "src/step_2_premium/config.yaml"
   rate_table_glob: "outputs/**/rate_table_final.csv"
 ```
 

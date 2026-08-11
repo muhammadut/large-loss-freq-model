@@ -12,8 +12,8 @@
 # =============================================================================
 
 run:
-  name: "premium_projection"
-  output_dir: "outputs/premium"
+  name: "step_2_premium"
+  output_dir: "outputs/step_2_premium"
 
 data:
   path: "data/basic_data_1.csv"

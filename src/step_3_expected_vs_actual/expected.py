@@ -12,9 +12,9 @@ import os
 import numpy as np
 import pandas as pd
 
-from premium_projection.config import load_config as load_step2
-from premium_projection import factors as F
-from premium_projection.project import project
+from step_2_premium.config import load_config as load_step2
+from step_2_premium import factors as F
+from step_2_premium.project import project
 
 
 def build_step2(step2_config_path: str):

@@ -11,11 +11,11 @@
 
 run:
   name: "expected_vs_actual_data2"
-  output_dir: "outputs/expected_vs_actual"
+  output_dir: "outputs/step_3_expected_vs_actual"
 
 upstream:
   step1_config: "src/config/config_data2.yaml"
-  step2_config: "src/premium_projection/config_data2.yaml"
+  step2_config: "src/step_2_premium/config_data2.yaml"
   rate_table_glob: "outputs/**/*data2*/rate_table_final.csv"   # the data_2 rate table
 
 report:

@@ -62,7 +62,7 @@ src/
 │   ├── config.yaml            # the premium run (default)
 │   ├── config_tiv.yaml        # the TIV-lens run (same, lens: tiv)
 │   └── config.reference.md    # every config field documented
-├── large_loss_freq/           # the package
+├── step_1_frequency/           # the package
 │   ├── config.py        # load + validate config (fails loudly on bad input)
 │   ├── data.py          # load, clean, cat-scope, data-quality gates
 │   ├── panel.py         # build the segment × year table
@@ -205,9 +205,9 @@ holds the classical fit stats.)
 ## 9. Building Part 2 — the prediction layer (your spec)
 
 > **Status: built (Steps 2 + 3).** The premium projection lives in
-> `src/premium_projection/` (Step 2) and the expected-vs-actual output layer — percentile,
+> `src/step_2_premium/` (Step 2) and the expected-vs-actual output layer — percentile,
 > traffic-light, attribution waterfall, board narrative — lives in
-> `src/expected_vs_actual/` (Step 3; see its README). The spec below is the design they
+> `src/step_3_expected_vs_actual/` (Step 3; see its README). The spec below is the design they
 > implement: the "core" and rules 1–4 are Step 2/3's contract, and "What to output" is
 > exactly what Step 3 writes to `board_report.md`.
 

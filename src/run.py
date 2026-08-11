@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from large_loss_freq.pipeline import main
+from step_1_frequency.pipeline import main
 
 if __name__ == "__main__":
     main()

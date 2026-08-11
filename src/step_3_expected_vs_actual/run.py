@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Entry point for Step 3 — Expected vs Actual.
 
-    python src/expected_vs_actual/run.py --config src/expected_vs_actual/config.yaml
+    python src/step_3_expected_vs_actual/run.py --config src/step_3_expected_vs_actual/config.yaml
 
 Consumes Step 1 (rate table) and Step 2 (premium projection), compares expected
 to actual large-loss counts, and writes the board deliverable in
-outputs/expected_vs_actual/<run>_<date>/:
+outputs/step_3_expected_vs_actual/<run>_<date>/:
     board_report.md     the verdict + waterfall + narrative + caveats (open this)
     segment_ave.csv     per-segment expected vs actual (verdict year)
     ave_summary.csv     portfolio verdict row
@@ -28,14 +28,14 @@ except Exception:
 
 import pandas as pd
 
-from expected_vs_actual.config import load_config
-from expected_vs_actual import actuals as AC
-from expected_vs_actual import expected as EX
-from expected_vs_actual import ave as AV
-from expected_vs_actual import waterfall as WF
-from expected_vs_actual import narrative as NA
-from expected_vs_actual import backtest as BT
-from expected_vs_actual import report as R
+from step_3_expected_vs_actual.config import load_config
+from step_3_expected_vs_actual import actuals as AC
+from step_3_expected_vs_actual import expected as EX
+from step_3_expected_vs_actual import ave as AV
+from step_3_expected_vs_actual import waterfall as WF
+from step_3_expected_vs_actual import narrative as NA
+from step_3_expected_vs_actual import backtest as BT
+from step_3_expected_vs_actual import report as R
 
 
 def _seg_frame(cfg2, full_ys, vis, ftab, rates, actuals_df, s1cfg, keys, year, month):
@@ -98,7 +98,7 @@ def run(config_path: str):
     R.write_csv(bt, os.path.join(out, "backtest.csv"))
     R.write_backtest_report(os.path.join(out, "backtest_report.md"), bt, immature, cfg.verdict_year)
 
-    # (Per-segment analysis is its own step now — see src/segment_analysis/.)
+    # (Per-segment analysis is its own step now — see src/step_4_segment_analysis/.)
 
     # ---- write artifacts ----------------------------------------------------
     R.write_csv(seg_v.sort_values("expected_losses", ascending=False),

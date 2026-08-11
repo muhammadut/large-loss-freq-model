@@ -10,7 +10,7 @@ expected large losses (segment) = rate (segment) × projected premium (segment)
 ## Run it
 
 ```bash
-python src/premium_projection/run.py --config src/premium_projection/config.yaml
+python src/step_2_premium/run.py --config src/step_2_premium/config.yaml
 ```
 
 By default this runs on **`data_1`** — the same extract as the Step-1 rate table — so the

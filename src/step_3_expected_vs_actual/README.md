@@ -14,10 +14,10 @@ expected count = Σ ( Step-1 rate × Step-2 projected premium )   vs   actual co
 
 ```bash
 # after Step 1 (rate table) and Step 2 exist:
-python src/expected_vs_actual/run.py --config src/expected_vs_actual/config.yaml
+python src/step_3_expected_vs_actual/run.py --config src/step_3_expected_vs_actual/config.yaml
 ```
 
-Outputs land in `outputs/expected_vs_actual/<run>_<date>/`:
+Outputs land in `outputs/step_3_expected_vs_actual/<run>_<date>/`:
 
 | File | What it is |
 |---|---|
@@ -45,7 +45,7 @@ including it deflated rates ~10%. See `DECISIONS.md` D5.)*
 
 Board-level movers are in `board_report.md` (section 3). The full **four-lens segment analysis**
 (concentration, per-segment accuracy, emerging-risk drift, confidence) is its own step —
-see **`src/segment_analysis/`**.
+see **`src/step_4_segment_analysis/`**.
 
 ## Does it hold up in backtest? (yes — walk-forward, out-of-sample)
 
@@ -92,7 +92,7 @@ two upstream configs:
 ```yaml
 upstream:
   step1_config: "src/config/config.yaml"                # rates + actual-loss flagging
-  step2_config: "src/premium_projection/config.yaml"    # premium projection machinery
+  step2_config: "src/step_2_premium/config.yaml"    # premium projection machinery
   rate_table_glob: "outputs/**/rate_table_final.csv"    # newest frozen rate table
 ```
 

@@ -14,12 +14,12 @@
 # =============================================================================
 
 run:
-  name: "segment_analysis"
-  output_dir: "outputs/segment_analysis"
+  name: "step_4_segment_analysis"
+  output_dir: "outputs/step_4_segment_analysis"
 
 upstream:
   step1_config: "src/config/config.yaml"                 # rates + actual-loss flagging
-  step2_config: "src/premium_projection/config.yaml"     # premium panels
+  step2_config: "src/step_2_premium/config.yaml"     # premium panels
   rate_table_glob: "outputs/**/rate_table_final.csv"     # newest frozen rate table
 
 analysis:

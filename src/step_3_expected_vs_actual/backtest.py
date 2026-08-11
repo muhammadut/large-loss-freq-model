@@ -19,11 +19,11 @@ actual would fail the model for a data-maturity reason.
 from __future__ import annotations
 import pandas as pd
 
-from large_loss_freq import panel as panel_mod
-from large_loss_freq import model as model_mod
-from large_loss_freq import credibility as cred_mod
-from premium_projection import factors as F
-from premium_projection.project import project
+from step_1_frequency import panel as panel_mod
+from step_1_frequency import model as model_mod
+from step_1_frequency import credibility as cred_mod
+from step_2_premium import factors as F
+from step_2_premium.project import project
 
 from .ave import portfolio_ave
 from . import actuals as AC

@@ -1,5 +1,5 @@
 """
-large_loss_freq — config-driven calibration pipeline for the Large-Loss
+step_1_frequency — config-driven calibration pipeline for the Large-Loss
 Frequency Model.
 
 Scope: data -> panel -> Poisson GLM (year effect) -> hierarchical credibility

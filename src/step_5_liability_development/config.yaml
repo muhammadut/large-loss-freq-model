@@ -1,0 +1,87 @@
+# =============================================================================
+# Liability development pipeline (parallel track to the property model).
+#
+#   ladder (timing)  +  developed rate (frequency)  ->  partial verdict
+#
+# Property is scored elsewhere from basic_data_1.csv (fully developed -> compared
+# in full). This module handles ONLY liability (COVCL), which emerges slowly and
+# must be developed. Both meet in the expected-vs-actual board.
+# =============================================================================
+
+run:
+  name: "step_5_liability_development"
+  output_dir: "outputs/step_5_liability_development"
+
+data:
+  path: "data/liability_data_10_yrs.csv"
+  year_col: "ROLLING_YEAR"
+  covtype_col: "CovType"
+  coverage: "COVCL"                     # this track is liability only
+  maturity_loss_col: "TOTAL_COVERAGE_INCURREDLOSS_M"   # incurred at age 0 (end of accident year)
+  dev_loss_cols: ["LOSS_N_plus_1", "LOSS_N_plus_2", "LOSS_N_plus_3", "LOSS_N_plus_4", "LOSS_N_plus_5"]
+  exposure_col: "TOTAL_EARNED_EXPOSURE"
+  premium_col: "TOTAL_EARNED_PREMIUM"
+
+large_loss:
+  threshold: 200000
+
+segmentation:
+  seg_keys: ["ratingregion", "MAIN_OPGROUP"]   # (coverage is fixed = COVCL on this track)
+  industry_key: "MAIN_OPGROUP"
+
+develop:
+  latest_valuation_year: 2025    # as-of year of the newest snapshot in the file
+  step_months: 12                # annual development steps
+  tail_factor: 1.08              # from the last observed age (60mo) to ultimate (ASSUMPTION)
+  # RECENT-WEIGHTED EARLY RUNGS. Reporting has SLOWED over the decade (age-0 large
+  # losses per $M fell ~35 -> ~4-9 across 2018->2024), so the pooled early factors are
+  # stale and over-expect a fresh year (crying "LOW"). Estimate the early rungs from
+  # recent accident years only; later rungs are stable across all years and stay pooled.
+  #   pooled age-0 %developed ~21%  ->  recent-weighted ~11%   (age-12 ~37% -> ~30%)
+  recent_ladder:
+    enabled: true
+    recent_from_year: 2021       # accident years >= this define the "recent" regime
+    recent_ages: [0, 12]         # only these early rungs are recent-weighted
+  # CV of the %developed estimate by age, from the leave-one-out DEVELOPMENT backtest
+  # (a year's own emergence is ~100% uncertain when fresh, ~12% by year 3). Retained as
+  # the FALLBACK band basis when a year/age has too little history for an empirical band.
+  development_cv:
+    0: 1.00
+    12: 0.83
+    24: 0.56
+    36: 0.15
+    48: 0.18
+    60: 0.10
+
+calibration:
+  # developed-enough, recent years for the rate. Exclude the tiny/odd 2018 book, the
+  # too-green 2024/2025, AND 2023 (~50% developed -> its ~x2 gross-up amplifies noise).
+  experience_years: [2019, 2020, 2021, 2022]
+
+credibility:
+  # Buhlmann K fallback if variance components are degenerate (thin data).
+  k_fallback_exposure_share: 1.0
+
+verdict:
+  score_years: [2024, 2025]      # the immature years to score with partials
+  band_lo: 0.10                  # central-interval tail probs for the "normal" band (middle 80%)
+  band_hi: 0.90
+  # THE BAND METHOD (the alarm). Picked by the walk-forward shoot-out (bands.shootout),
+  # scored on coverage + false-alarm + width across 27 held-out cells:
+  #   poisson    coverage 30%  -> DISQUALIFIED (fires on 70% of normal cells; too tight)
+  #   std (+-2s) coverage 96%  -> too wide, no real alarm
+  #   min_max    coverage 89%  -> fragile (stretches to worst single year)
+  #   percentile coverage 85%  -> tightest, but can't extrapolate + jumpy at small n
+  #   hybrid     coverage 89%  -> DEFAULT: 0 false-ALARMs, extrapolates, stated coverage
+  # Configurable: swap without code changes. Options: hybrid|percentile|std|min_max|poisson.
+  band_method: "hybrid"
+  band_recent_window: 5          # measure the band on the last N accident years (recent regime)
+  band_min_train: 3              # fewer historical points than this -> fall back to modelled band
+  cv_rate: 0.11                  # rate estimation CV (leave-one-out rate backtest) -- fallback band only
+  # TOO EARLY is now BAND-DRIVEN, not a fixed %developed gate: the alarm (upper) side
+  # always works, but the LOW (lower) side is only meaningful when the band's floor sits
+  # materially above zero. If band_lo <= this floor, a genuinely low year is
+  # indistinguishable from early-reporting noise -> verdict = TOO EARLY (ALARM still fires
+  # on a blow-up). This lets a tight age-12 band give a real verdict instead of a blanket
+  # "too young" veto.
+  too_early_lo_floor: 1

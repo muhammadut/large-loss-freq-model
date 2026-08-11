@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Entry point for Part 2 (premium projection).
 
-    python src/premium_projection/run.py --config src/premium_projection/config.yaml
+    python src/step_2_premium/run.py --config src/step_2_premium/config.yaml
 
-Produces, in outputs/premium/<run>_<date_time>/:
+Produces, in outputs/step_2_premium/<run>_<date_time>/:
     growth_factor_table.csv   the factor per (segment × month)   [the reusable artifact]
     projected_premium.csv     projected full-year premium per segment (demo run)
     expected_losses.csv       projected premium × Part-1 rate    [if a rate table is found]
@@ -17,11 +17,11 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from premium_projection.config import load_config
-from premium_projection import factors as F
-from premium_projection import backtest as B
-from premium_projection.project import project
-from premium_projection import report as R
+from step_2_premium.config import load_config
+from step_2_premium import factors as F
+from step_2_premium import backtest as B
+from step_2_premium.project import project
+from step_2_premium import report as R
 
 
 def _latest_rate_table(pattern):

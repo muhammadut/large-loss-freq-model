@@ -12,12 +12,12 @@
 # =============================================================================
 
 run:
-  name: "expected_vs_actual"
-  output_dir: "outputs/expected_vs_actual"
+  name: "step_3_expected_vs_actual"
+  output_dir: "outputs/step_3_expected_vs_actual"
 
 upstream:
   step1_config: "src/config/config.yaml"                 # rates + actual-loss flagging
-  step2_config: "src/premium_projection/config.yaml"     # premium projection machinery
+  step2_config: "src/step_2_premium/config.yaml"     # premium projection machinery
   rate_table_glob: "outputs/**/rate_table_final.csv"     # newest rate table (the frozen deliverable)
 
 report:

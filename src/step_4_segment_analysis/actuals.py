@@ -7,8 +7,8 @@ grain). Any other counting would make the expected-vs-actual lenses meaningless.
 from __future__ import annotations
 import pandas as pd
 
-from large_loss_freq.config import load_config as load_step1
-from large_loss_freq import data as S1
+from step_1_frequency.config import load_config as load_step1
+from step_1_frequency import data as S1
 
 
 def load_actuals(step1_config_path: str):

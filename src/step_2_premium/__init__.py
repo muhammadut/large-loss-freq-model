@@ -1,5 +1,5 @@
 """
-premium_projection — Part 2 of the Large-Loss Frequency Model.
+step_2_premium — Part 2 of the Large-Loss Frequency Model.
 
 Projects full-year earned premium PER SEGMENT for a target year, so it can be
 multiplied by the Part-1 frequency rate to produce expected large-loss counts.
