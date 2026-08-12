@@ -6,6 +6,13 @@ import os
 import pandas as pd
 
 
+def _ord(n) -> str:
+    """English ordinal: 1->1st, 2->2nd, 3->3rd, 33->33rd, 11/12/13->th."""
+    n = int(round(n))
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
 def write_csv(df: pd.DataFrame, path: str):
     df.to_csv(path, index=False)
 
@@ -40,7 +47,7 @@ def write_board_report(path, *, cfg, rate_table_path, dispersion, verdict, wf,
     A("| Expected | Actual | Gap | Percentile | Normal range (5–95th) | Status |")
     A("|---:|---:|---:|---:|:---:|:---:|")
     A(f"| {verdict['expected']:.1f} | {verdict['actual']} | {verdict['gap']:+.1f} | "
-      f"{verdict['percentile']:.0f}th | {verdict['ci_5th']}–{verdict['ci_95th']} | "
+      f"{_ord(verdict['percentile'])} | {verdict['ci_5th']}–{verdict['ci_95th']} | "
       f"**{verdict['traffic_light']}** |\n")
     A("```")
     A(narrative)

@@ -7,11 +7,18 @@ are material, then a plain-English read on the random noise.
 from __future__ import annotations
 
 
+def _ord(n) -> str:
+    """English ordinal: 1->1st, 2->2nd, 3->3rd, 33->33rd, 11/12/13->th."""
+    n = int(round(n))
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
 def board_narrative(ave: dict, wf: dict, verdict_year, prior_year) -> str:
     z = wf["random_z"]
     lines = [
         f"Large-loss count for {verdict_year} was {ave['actual']}, against an expected "
-        f"{ave['expected']:.0f} ({ave['percentile']:.0f}th percentile, "
+        f"{ave['expected']:.0f} ({_ord(ave['percentile'])} percentile, "
         f"normal range {ave['ci_5th']}–{ave['ci_95th']}). Status: {ave['traffic_light']}.",
         "",
         f"Change from the {prior_year} expectation of {wf['prior_expected']:.0f}:",
